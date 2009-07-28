@@ -9,7 +9,7 @@ class CIM_RunningOS < ActiveCim::Base
   self.cim_class_name = :CIM_RunningOS
 end
 
-b = CIM_RunningOS.new
+b = CIM_RunningOS.create({})
 b.cim_class_name
 
 client = Sfcc::Client.new('http', 'localhost', '5988', 'root', 'novell' );
