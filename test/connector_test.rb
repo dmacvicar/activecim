@@ -10,7 +10,7 @@ class TC_MyTest < Test::Unit::TestCase
   # end
 
   def test_connector_wbem_cli
-    connector = ActiveCim::CliConnector
+    connector = ActiveCim::WbemCliConnector.new
     connector.site = "http://localhost/root/cimv2"
 
     connector.each_class_name do |name|
