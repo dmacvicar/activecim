@@ -1,9 +1,17 @@
 require 'uri'
+require 'open3'
 
 module ActiveCim
 
+  class ConnectorError < StandardError; end # :nodoc:
+  
+  # Cim class not found
+  class CimClassNotFound < ConnectorError; end # :nodoc:
+
   class Connector
 
+    DEFAULT_CONNECTOR = :wbem_cli
+    
     def initialize(site)
       raise ArgumentError, 'Missing site URI' unless site
       @user = @password = nil
@@ -30,33 +38,19 @@ module ActiveCim
     # Set password for remote service.
     def password=(password)
       @password = password
-    end    
-  end
-
-  class WbemCliConnector < ActiveCim::Connector
-    def initialize(site)
-      super(site)
     end
 
-    def initialize
-      super("http://localhost/root/cimv2")
-    end
-    
-    def run_wbem_cli(args)
-      out = `wbemcli #{args}`
-      # wbemcli does not exit with non zero so
-      # raise if the exception message is shown
-      if out[0] == '*'
-        msg = out.split("\n")
-      out
-    end
-      
-    def each_class_name
-      out = run_wbem_cli "ecnff #{site}"
-      out.each_line do |line|
-        yield line.split(':').last.chomp
+    # factory method
+    def self.create(site, type = DEFAULT_CONNECTOR)
+      case type
+        when :wbem_cli
+          WbemCliConnector.new(site)
+        else
+          raise "Unknown connector type"
       end
     end
     
   end
 end
+
+require 'active_cim/wbem_cli_connector'
