@@ -56,5 +56,9 @@ Authors:
 Duncan Mac-Vicar P. <dmacvicar@suse.de>
 Klaus Kaempf <kkaempf@suse.de>
 
-Based on lot of code from Rails ActiveResource
+* Uses lot of code from Rails ActiveResource
+* Inspired in good part by http://en.opensuse.org/PowerCIM from Martin Mrazik
+but with different goals: Rails usage, hide CIM as much as possible,
+Ruby semantics, and ActiveRecord/Resource feeling
+
 
