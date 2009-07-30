@@ -43,18 +43,6 @@ module ActiveCim
         yield name if not name.nil?
       end
     end
-
-    # iterates over each path describing an instance
-    def each_instance_path(klass_name)      
-      out = run_wbem_cli "ein '#{site}:#{klass_name}'"
-      out.each do |line|
-        line.chomp!
-        # split by : and take the 3rd part
-        # ie: localhost:5988/root/cimv2:CIM_ServiceAccessPoint
-        name = line.split(':')[2]
-        yield name if not name.nil?
-      end
-    end
     
     # iterates over each instance giving
     # on each iteration the fields needed to
@@ -74,6 +62,18 @@ module ActiveCim
 
     private
 
+    # iterates over each path describing an instance
+    def each_instance_path(klass_name)      
+      out = run_wbem_cli "ein '#{site}:#{klass_name}'"
+      out.each do |line|
+        line.chomp!
+        # split by : and take the 3rd part
+        # ie: localhost:5988/root/cimv2:CIM_ServiceAccessPoint
+        name = line.split(':')[2]
+        yield name if not name.nil?
+      end
+    end
+    
     # takes object path (only the path)
     # a map of properties_
     #

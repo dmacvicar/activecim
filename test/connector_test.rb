@@ -24,11 +24,11 @@ class TC_MyTest < Test::Unit::TestCase
     
     # unknown class
     assert_raise ActiveCim::CimClassNotFound do
-      conn.each_instance_path('NonExistantClass')
+      conn.each_instance('NonExistantClass')
     end
           
     instances = []
-    conn.each_instance_path('CIM_EthernetPort') do |i|
+    conn.each_instance('CIM_EthernetPort') do |i|
       instances << i
     end
     assert_equal 1, instances.size
