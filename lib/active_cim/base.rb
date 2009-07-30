@@ -166,34 +166,17 @@ module ActiveCim
  
       # Find a single instance
       def find_one(options)
-        case from = options[:from]
-        when Symbol
-          instantiate_record(get(from, options[:params]))
-        when String
-          path = "#{from}#{query_string(options[:params])}"
-          instantiate_record(connector.get(path, headers))
-        end
+        raise "Not implemented"
       end
  
-      # Find a single resource from the default URL
-      def find_single(scope, options)
-        prefix_options, query_options = split_options(options[:params])
-        path = element_path(scope, prefix_options, query_options)
-        instantiate_record(connector.get(path, headers), prefix_options)
-      end
-
-      def instantiate_collection(collection, prefix_options = {})
-          collection.collect! { |record| instantiate_record(record, prefix_options) }
+      def instantiate_collection(collection)
+          collection.collect! { |record| instantiate_record(record) }
       end
       
       # takes the properties and creates a record from it
       # note that those are the key properties
-      def instantiate_record(record, prefix_options = {})
-          #pp "!!!!!!!! "
-          #pp record
+      def instantiate_record(record)
           new(record).tap do |resource|
-            # nothing yet
-            #resource.prefix_options = prefix_options
           end
         end
     end
@@ -213,11 +196,13 @@ module ActiveCim
         @attributes[key.to_s] =
           case value
             when Array
-              resource = find_or_create_resource_for_collection(key)
-              value.map { |attrs| attrs.is_a?(String) ? attrs.dup : resource.new(attrs) }
+              raise "Not implemented"
+              #resource = find_or_create_resource_for_collection(key)
+              #value.map { |attrs| attrs.is_a?(String) ? attrs.dup : resource.new(attrs) }
             when Hash
-              resource = find_or_create_resource_for(key)
-              resource.new(value)
+              raise "Not implemented"
+              #resource = find_or_create_resource_for(key)
+              #resource.new(value)
             else
               value.dup rescue value
           end

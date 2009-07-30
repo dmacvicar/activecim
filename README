@@ -15,6 +15,8 @@ Features, What is implemented?
 - gathering properties
 - more or less abstracted connector which allow to use
   any method to get the data (cim client, api, fake, etc)
+  See Connector class documentation for information on
+  what do you need to implement for a new connector
 
 Requirements:
 

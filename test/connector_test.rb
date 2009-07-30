@@ -33,6 +33,14 @@ class TC_MyTest < Test::Unit::TestCase
     end
     assert_equal 1, instances.size
 
+    conn.each_key('Linux_EthernetPort') do |k|
+      puts k
+    end
+
+    conn.each_property('Linux_EthernetPort') do |k|
+      puts k
+    end
+    
     #pp conn.instance(instances.first)    
     #pp instances
     
