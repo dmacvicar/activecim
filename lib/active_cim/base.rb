@@ -3,14 +3,25 @@ require'activesupport'
 require 'uri'
 require 'pp'
 
+#
+# ActiveRecord like access for CIM data
+#
+# class Linux_EthernetPort < ActiveCim::Base
+#  self.site = "http://localhost/root/cimv2"
+# end
+#
+# ports = Linux_EthernetPort.find(:all)
+#
 module ActiveCim
   
-  # ActiveCim::Base
+  # ActiveCim::Base is the base class for CIM models
+  # you want to proxy in your applications
   class Base
   
     class << self
 
       # returns the connector we are using
+      # if refresh is true
       def connector(refresh = false)
         if defined?(@connector) || superclass == Object
           @connector = Connector.create(site) if refresh || @connector.nil?
@@ -22,7 +33,8 @@ module ActiveCim
           superclass.connector
         end
       end
-      
+
+      # the URI of the CIM server we are connecting to
       def site
         if defined?(@site)
           @site
@@ -31,6 +43,7 @@ module ActiveCim
         end
       end
 
+      # sets the URI of the CIM server we are connecting to
       def site=(site)
         @connector = nil
         if site.nil?
@@ -42,7 +55,7 @@ module ActiveCim
         end
       end
  
-      # Gets the \user for REST HTTP authentication.
+      # User authentication for the CIMOM. Not used yet
       def user
         # Not using superclass_delegating_reader. See +site+ for explanation
         if defined?(@user)
@@ -52,12 +65,16 @@ module ActiveCim
         end
       end
     
-      # Sets the \user for REST HTTP authentication.
+      # Sets the \user authentication for the CIMOM. Not used yet
       def user=(user)
         @connector = nil
         @user = user
       end
 
+      # CIM class name this model represents. By default
+      # it is taken from the ruby class name
+      #
+      # Analog to element name in the REST world
       def cim_class_name
         if defined?(@cim_class_name)
           @cim_class_name
@@ -65,11 +82,12 @@ module ActiveCim
         to_s
       end
 
+      # Sets the \cim_class_name
       def cim_class_name=(classname)
         @cim_class_name = classname
       end
       
-
+      # Creates a new instance with its attributes
       def create(attributes = {})
         self.new(attributes).tap {}
       end
@@ -80,6 +98,7 @@ module ActiveCim
       end
 
       # Goes from CimLikeField to ruby_like_fields
+      # FIXME move elsewhere
       def rubyize_fields(fields)
         hsh = Hash.new
         fields.each do |key,val|
@@ -88,10 +107,14 @@ module ActiveCim
         hsh
       end
 
+      # Goes from ruby_like to CimLike
+      # FIXME move elsewhere
       def rubyize(name)
         name.underscore
       end
-      
+
+      # Goes from ruby_like to CimLike
+      # FIXME move elsewhere      
       def cimize_fields(fields)
         hsh = Hash.new
         fields.each do |key,val|
@@ -100,6 +123,8 @@ module ActiveCim
         hsh
       end
 
+      # Goes from ruby_like to CimLike
+      # FIXME move elsewhere
       def cimize(name)
         name.camelize.gsub(/Id/, "ID")
       end
@@ -115,14 +140,8 @@ module ActiveCim
       # * <tt>:last</tt> - Returns the last instance found.
       # * <tt>:all</tt> - Returns every instance that matches the request.
       #
-      # ==== Options
-      #
-      # * <tt>:from</tt> - Sets the path or custom method that resources will be fetched from.
-      # * <tt>:params</tt> - Sets query and \prefix (nested URL) parameters.
-      #
       # ==== Examples
-      # Person.find(1)
-      # # => GET /people/1.xml
+      # ports = Linux_EthernetPort.find(:all)
       #
       def find(*arguments)
         scope = arguments.slice!(0)
@@ -145,7 +164,7 @@ module ActiveCim
         instantiate_collection(coll)
       end
  
-      # Find a single resource from a one-off URL
+      # Find a single instance
       def find_one(options)
         case from = options[:from]
         when Symbol

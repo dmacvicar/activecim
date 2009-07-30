@@ -20,7 +20,7 @@ class TC_MyTest < Test::Unit::TestCase
     conn.each_class_name do |name|
       cim_classes << name
     end
-    assert_equal 74, cim_classes.size
+    assert_equal 70, cim_classes.size
     
     # unknown class
     assert_raise ActiveCim::CimClassNotFound do
@@ -31,7 +31,7 @@ class TC_MyTest < Test::Unit::TestCase
     conn.each_instance_path('CIM_EthernetPort') do |i|
       instances << i
     end
-    assert_equal 2, instances.size
+    assert_equal 1, instances.size
 
     #pp conn.instance(instances.first)    
     #pp instances

@@ -17,7 +17,7 @@ class TC_ActiveCim_Base < Test::Unit::TestCase
   def test_base
     
     ports = Linux_EthernetPort.find(:all)
-    #pp ports
+    pp ports
 
     assert_nothing_raised do
       ports.each do |port|

@@ -15,7 +15,7 @@ module ActiveCim
       stdin, stdout, stderr = Open3::popen3(cmd)
       # wbemcli does not exit with non zero so
       # raise if the exception message is shown
-      err = stderr.readlines
+      err = stderr.readlines      
       # something bad happened?
       if not err.empty?
         err.reject! { |x| x == "*\n" }
@@ -26,14 +26,21 @@ module ActiveCim
           raise msg + " (when executing #{cmd})" 
         end
       end
+       # note, the output does not have URI schema
+       # and the full line is not a valid URI
        stdout.readlines
     end
-      
+
+    # goes through every class available on the server
     def each_class_name
-      ENV['WBEMCLI_IND'] = ": #{site}"
       out = run_wbem_cli "ecn '#{site}'"
       out.each do |line|
-        yield line.split(':').last.chomp
+        # yield only the object path URI path
+        line.chomp!
+        # split by : and take the 3rd part
+        # ie: localhost:5988/root/cimv2:CIM_ServiceAccessPoint
+        name = line.split(':')[2]
+        yield name if not name.nil?
       end
     end
 
@@ -41,7 +48,11 @@ module ActiveCim
     def each_instance_path(klass_name)      
       out = run_wbem_cli "ein '#{site}:#{klass_name}'"
       out.each do |line|
-        yield line.split(':').last.chomp
+        line.chomp!
+        # split by : and take the 3rd part
+        # ie: localhost:5988/root/cimv2:CIM_ServiceAccessPoint
+        name = line.split(':')[2]
+        yield name if not name.nil?
       end
     end
     
@@ -63,12 +74,16 @@ module ActiveCim
 
     private
 
-    # takes encoded properties and returns
-    # a map of properties
+    # takes object path (only the path)
+    # a map of properties_
+    #
+    # input: Linux_EthernetPort.SystemCreationClassName="Linux_ComputerSystem",SystemName="tarro",CreationClassName="Linux_EthernetPort",DeviceID="eth0"
+    #
+    # output: { :SystemCreationClassName = > "Linux_ComputerSystem", :SystemName => "tarro", :CreationClassName = > "Linux_EthernetPort", :DeviceID => "eth0"}
+    # 
     def fields(path)
       fields = Hash.new
-      
-      nothing, rest = path.split(':')
+      # split the part after the CIM class name
       pairs = path[path.index("."), path.size].chomp.split(',')
       pairs.each do |pair|
         puts pair
