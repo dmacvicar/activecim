@@ -1,0 +1,51 @@
+
+ActiveCim
+---------
+
+ActiveCim is a ActiveRecord/ActiveResource like API to get
+data from a CIMOM server.
+
+CIM properties are available with Ruby style so APropertyLikeThis
+would be available as a_property_like_this.
+
+What is implemented?
+
+- defining classes
+- find(:all)
+- gathering properties
+
+Requirements:
+
+- The only implemented connector for now is a connector
+  that uses wbemcli
+
+Usage:
+
+ports = Linux_EthernetPort.find(:all)
+
+ports.each do |port|
+ puts port.id
+ port.device_id
+ port.system_name
+end
+
+Plan (in more or less priority order):
+
+- Implement selective find
+- sblim native connector
+- ws-man connector
+- implement associations
+- implement writing of properties
+- implement calling methods
+
+Mission:
+
+ActiveCim effort has as a goal to access CIM data
+from WebYaST.
+
+Authors:
+
+Duncan Mac-Vicar P. <dmacvicar@suse.de>
+Klaus Kaempf <kkaempf@suse.de>
+
+
