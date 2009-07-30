@@ -8,11 +8,13 @@ data from a CIMOM server.
 CIM properties are available with Ruby style so APropertyLikeThis
 would be available as a_property_like_this.
 
-What is implemented?
+Features, What is implemented?
 
 - defining classes
 - find(:all)
 - gathering properties
+- more or less abstracted connector which allow to use
+  any method to get the data (cim client, api, fake, etc)
 
 Requirements:
 
@@ -20,6 +22,10 @@ Requirements:
   that uses wbemcli
 
 Usage:
+
+class Linux_EthernetPort < ActiveCim::Base
+  self.site = "http://localhost/root/cimv2"
+end
 
 ports = Linux_EthernetPort.find(:all)
 
@@ -48,4 +54,5 @@ Authors:
 Duncan Mac-Vicar P. <dmacvicar@suse.de>
 Klaus Kaempf <kkaempf@suse.de>
 
+Based on lot of code from Rails ActiveResource
 
