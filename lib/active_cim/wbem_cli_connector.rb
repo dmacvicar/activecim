@@ -25,7 +25,7 @@ module ActiveCim
     
     # goes through every class available on the server
     def each_class_name
-      out = run_wbem_cli "ecn '#{site}'"
+      out = run_wbem_cli('ecn', "#{site}")
       out.each do |line|
         # yield only the object path URI path
         line.chomp!
@@ -48,15 +48,22 @@ module ActiveCim
     # get instance given a encoded path
     # the instance is defin
     def instance(path)      
-      out = run_wbem_cli "gi '#{site}:#{path}'"      
+      out = run_wbem_cli('gi', "#{site}:#{path}")
       fields(path)
     end
 
-    private
+    ## private methods ##
 
+    # runs wbem gc to get class definition and
+    # if :types => true also pass -t to get the
+    # property types (key, array)
     def class_def(klass_name, opts = {})
       # if :types => true then we get the types
-      out = run_wbem_cli "gc #{opts[:types] ? "-t" : ""} '#{site}:#{klass_name}'"
+      args = []
+      args << 'gc'
+      args << '-t' if opts[:types]
+      args << "#{site}:#{klass_name}"
+      out = run_wbem_cli(*args)
       raise "Bad response" if out.empty?
       # this stupid response does not have the dot between the class
       # name, so lets build it
@@ -66,12 +73,12 @@ module ActiveCim
     
     # iterates over each path describing an instance
     def each_instance_path(klass_name)      
-      out = run_wbem_cli "ein '#{site}:#{klass_name}'"
+      out = run_wbem_cli('ein', "#{site}:#{klass_name}")
       out.each do |line|
         line.chomp!
         # split by : and take the 3rd part
         # ie: localhost:5988/root/cimv2:CIM_ServiceAccessPoint
-        name = line.split(':')[2]
+        name = line.split(':')[ line.count(':')  ]
         yield name if not name.nil?
       end
     end
@@ -86,7 +93,7 @@ module ActiveCim
     def fields(path)
       fields = Hash.new
       # split the part after the CIM class name
-      pairs = path[path.index("."), path.size].chomp.split(',')
+      pairs = path[path.index(".") + 1, path.size].chomp.split(',')
       pairs.each do |pair|
         key, value = pair.split('=')
         value = value.gsub(/"/, "") if not value.nil?
@@ -96,9 +103,10 @@ module ActiveCim
     end
 
     # executes wbemcli and controls error handling
-    def run_wbem_cli(args)
-      cmd = "wbemcli #{args}"
-      stdin, stdout, stderr = Open3::popen3(cmd)
+    def run_wbem_cli(*args)
+      # quote args and join them
+      args_s = args.unshift('wbemcli').map{ |x| "'#{x}'" }.join(' ')
+      stdin, stdout, stderr = Open3::popen3(args_s)
       # wbemcli does not exit with non zero so
       # raise if the exception message is shown
       err = stderr.readlines      
@@ -109,7 +117,7 @@ module ActiveCim
         if msg =~ /CIM_ERR_INVALID_CLASS/
           raise CimClassNotFound
         else
-          raise msg + " (when executing #{cmd})" 
+          raise msg + " (when executing [ #{args_s} ] }" 
         end
       end
       # note, the output does not have URI schema

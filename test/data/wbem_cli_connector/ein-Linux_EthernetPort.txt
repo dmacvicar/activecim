@@ -1,0 +1,1 @@
+localhost:5988/root/cimv2:Linux_EthernetPort.SystemCreationClassName="Linux_ComputerSystem",SystemName="tarro",CreationClassName="Linux_EthernetPort",DeviceID="eth0"

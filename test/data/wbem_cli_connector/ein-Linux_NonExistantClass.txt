@@ -1,0 +1,3 @@
+*
+* wbemcli: Cim: (5) CIM_ERR_INVALID_CLASS: Class not found
+*
