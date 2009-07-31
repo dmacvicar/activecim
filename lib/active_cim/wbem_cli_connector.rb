@@ -25,7 +25,7 @@ module ActiveCim
     # goes through every class available on the server
     def each_class_name(path)
       out = run_wbem_cli('ecn', "#{path}")
-      out.each do |line|
+      out.each_line do |line|
         # yield only the object path URI path
         line.chomp!
         # split by : and take the 3rd part
@@ -41,7 +41,7 @@ module ActiveCim
     def each_instance(klass_path)
 
       out = run_wbem_cli('ein', "#{klass_path}")
-      out.each do |line|
+      out.each_line do |line|
         next if line.empty?
         line.chomp!
         yield "http://#{line}"
@@ -50,12 +50,16 @@ module ActiveCim
     
     # get instance given the object path
     def instance(object_path)
-      out = run_wbem_cli('ei', '-nl', "#{object_path}")
+      out = run_wbem_cli('gi', '-nl', "#{object_path}")
       raise "Wrong output when retrieving #{object_path}" if out.empty?
       properties = {}
-      # ignore firt line with object path
-      out.shift
-      out.each do |line|
+      counter = 0
+      out.each_line do |line|
+        # ignore firt line with object path
+        if counter == 0
+          counter += 1
+          next
+        end
         line.chomp!
         next if line.empty?
         #raise "Unknown output when retrieving #{object_path}" if line[0] == "-"
@@ -65,6 +69,7 @@ module ActiveCim
         v = $1 if v =~ /\"(.+)\"/
         # correct null usage
         v = nil if v == "NULL"
+        v = false if v == "FALSE"
         properties.store(k.to_sym, v)
       end
       properties
@@ -85,7 +90,7 @@ module ActiveCim
       raise "Bad response" if out.empty?
       # this stupid response does not have the dot between the class
       # name, so lets build it
-      cn, path = out.first.chomp.split(" ")
+      cn, path = out.chomp.split(" ")
       props = fields("#{path}")
     end
     
@@ -115,7 +120,7 @@ module ActiveCim
       stdin, stdout, stderr = Open3::popen3(args_s)
       # wbemcli does not exit with non zero so
       # raise if the exception message is shown
-      err = stderr.readlines      
+      err = stderr.readlines
       # something bad happened?
       if not err.empty?
         err.reject! { |x| x == "*\n" }
@@ -128,7 +133,7 @@ module ActiveCim
       end
       # note, the output does not have URI schema
       # and the full line is not a valid URI
-      stdout.readlines
+      stdout
     end
 
   end

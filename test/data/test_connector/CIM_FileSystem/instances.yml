@@ -1,0 +1,167 @@
+--- 
+http://localhost:5988/root/cimv2:Linux_Ext3FileSystem.Name="/dev/disk/by-id/scsi-SATA_ST3250820AS_5QE40FM4-part2",CreationClassName="Linux_Ext3FileSystem",CSName="host1.suse.de",CSCreationClassName="Linux_ComputerSystem": 
+  :FSReservedCapacity: 
+  :ClusterSize: 
+  :Root: /
+  :OperationalStatus: 
+  :TimeOfLastStateChange: 
+  :ResizeIncrement: "0"
+  :CompressionMethod: 
+  :Generation: 
+  :OperatingStatus: 
+  :FileSystemType: ext3
+  :BlockSize: "4096"
+  :InstallDate: 
+  :EnabledDefault: "2"
+  :CaseSensitive: 
+  :CSCreationClassName: Linux_ComputerSystem
+  :DetailedStatus: 
+  :PersistenceType: 
+  :FileSystemSize: "244003024896"
+  :InstanceID: 
+  :RequestedState: "3"
+  :CasePreserved: 
+  :CSName: host1.suse.de
+  :PrimaryStatus: 
+  :PercentageSpaceUse: "64"
+  :OtherPersistenceType: 
+  :AvailableSpace: "74355306496"
+  :Caption: Ext3 local file system
+  :OtherEnabledState: 
+  :FreeInodes: 
+  :CodeSet: 
+  :CreationClassName: Linux_Ext3FileSystem
+  :HealthState: 
+  :TransitioningToState: "12"
+  :NumberOfFiles: 
+  :ReadOnly: "FALSE"
+  :Description: Represents the file store controlled by a ComputerSystem through local means.
+  :EnabledState: "3"
+  :TotalInodes: 
+  :MaxFileNameLength: "255"
+  :Name: /dev/disk/by-id/scsi-SATA_ST3250820AS_5QE40FM4-part2
+  :StatusDescriptions: 
+  :AvailableRequestedStates: 
+  :IsFixedSize: "0"
+  :EncryptionMethod: 
+  :ElementName: /
+  :Status: OK
+  :CommunicationStatus: 
+http://localhost:5988/root/cimv2:Linux_NFS.CSCreationClassName="Linux_ComputerSystem",CSName="host1.suse.de",CreationClassName="Linux_NFS",Name="host2:/work": 
+  :RetransmissionTimeout: 
+  :ClusterSize: 
+  :Root: /mnt/work
+  :OperationalStatus: 
+  :TimeOfLastStateChange: 
+  :AttributeCachingForRegularFilesMax: 
+  :ResizeIncrement: "0"
+  :CompressionMethod: 
+  :Generation: 
+  :OperatingStatus: 
+  :ReadBufferSize: 
+  :FileSystemType: nfs
+  :BlockSize: "8192"
+  :InstallDate: 
+  :EnabledDefault: "3"
+  :AttributeCachingForDirectoriesMin: 
+  :HardMount: 
+  :CaseSensitive: 
+  :CSCreationClassName: Linux_ComputerSystem
+  :DetailedStatus: 
+  :WriteBufferSize: 
+  :PersistenceType: 
+  :FileSystemSize: "374724460544"
+  :InstanceID: 
+  :RequestedState: "2"
+  :AttributeCachingForDirectoriesMax: 
+  :ForegroundMount: 
+  :CasePreserved: 
+  :CSName: host1.suse.de
+  :PrimaryStatus: 
+  :PercentageSpaceUse: "71"
+  :ServerCommunicationPort: 
+  :OtherPersistenceType: 
+  :AvailableSpace: "105458065408"
+  :Caption: NFS File System
+  :OtherEnabledState: 
+  :MountFailureRetries: 
+  :CodeSet: 
+  :CreationClassName: Linux_NFS
+  :HealthState: 
+  :TransitioningToState: "12"
+  :AttributeCaching: 
+  :NumberOfFiles: 
+  :ReadOnly: "FALSE"
+  :Description: The class represents the nfs mounts of the system.
+  :EnabledState: "2"
+  :RetransmissionAttempts: 
+  :Interrupt: 
+  :MaxFileNameLength: "255"
+  :Name: host2:/work
+  :StatusDescriptions: 
+  :AvailableRequestedStates: 
+  :AttributeCachingForRegularFilesMin: 
+  :IsFixedSize: "0"
+  :EncryptionMethod: 
+  :ElementName: host1.suse.de
+  :Status: OK
+  :CommunicationStatus: 
+http://localhost:5988/root/cimv2:Linux_NFS.CSCreationClassName="Linux_ComputerSystem",CSName="host1.suse.de",CreationClassName="Linux_NFS",Name="host3:/homes/dearuser": 
+  :RetransmissionTimeout: 
+  :ClusterSize: 
+  :Root: /suse/dearuser
+  :OperationalStatus: 
+  :TimeOfLastStateChange: 
+  :AttributeCachingForRegularFilesMax: 
+  :ResizeIncrement: "0"
+  :CompressionMethod: 
+  :Generation: 
+  :OperatingStatus: 
+  :ReadBufferSize: 
+  :FileSystemType: nfs
+  :BlockSize: "8192"
+  :InstallDate: 
+  :EnabledDefault: "3"
+  :AttributeCachingForDirectoriesMin: 
+  :HardMount: 
+  :CaseSensitive: 
+  :CSCreationClassName: Linux_ComputerSystem
+  :DetailedStatus: 
+  :WriteBufferSize: 
+  :PersistenceType: 
+  :FileSystemSize: "888199241728"
+  :InstanceID: 
+  :RequestedState: "2"
+  :AttributeCachingForDirectoriesMax: 
+  :ForegroundMount: 
+  :CasePreserved: 
+  :CSName: host1.suse.de
+  :PrimaryStatus: 
+  :PercentageSpaceUse: "87"
+  :ServerCommunicationPort: 
+  :OtherPersistenceType: 
+  :AvailableSpace: "115257761792"
+  :Caption: NFS File System
+  :OtherEnabledState: 
+  :MountFailureRetries: 
+  :CodeSet: 
+  :CreationClassName: Linux_NFS
+  :HealthState: 
+  :TransitioningToState: "12"
+  :AttributeCaching: 
+  :NumberOfFiles: 
+  :ReadOnly: "FALSE"
+  :Description: The class represents the nfs mounts of the system.
+  :EnabledState: "2"
+  :RetransmissionAttempts: 
+  :Interrupt: 
+  :MaxFileNameLength: "255"
+  :Name: host3:/homes/dearuser
+  :StatusDescriptions: 
+  :AvailableRequestedStates: 
+  :AttributeCachingForRegularFilesMin: 
+  :IsFixedSize: "0"
+  :EncryptionMethod: 
+  :ElementName: host1.suse.de
+  :Status: OK
+  :CommunicationStatus: 
