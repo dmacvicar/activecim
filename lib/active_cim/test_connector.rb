@@ -21,12 +21,18 @@ module ActiveCim
     end
 
     def each_instance(klass_path)
-      klass_name = klass_path.split(':')[2]
-      doc = YAML::load(File.join(@path, klass_name, "instances.yml"))
-      #pp doc
-
+      klass_name = klass_path.split(':')[3]
+      doc = YAML::load_file(File.join(@path, klass_name, "instances.yml"))
+      doc.each do |k,v|
+        yield k
+      end
     end
-    
-  end
 
+    def instance(path)
+      klass_name = "CIM_FileSystem"
+      doc = YAML::load_file(File.join(@path, klass_name, "instances.yml"))
+      return doc[path] if doc.has_key?(path)
+      raise "Instance not found"
+    end
+  end
 end

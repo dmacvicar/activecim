@@ -56,10 +56,8 @@ class TC_WbemCliConnectorTest < Test::Unit::TestCase
     assert_equal( 70, conn.each_class_name(@uri) {}.to_a.size, "There are 70 CIM classes")
     instances = []
     conn.each_instance("#{@uri}:CIM_FileSystem") do |i|
-      #puts i
       instances << conn.instance(i)
     end
-#    pp instances
     assert_equal(3, instances.size)    
     assert_equal("host2:/homedir/dearuser", instances.first[:Name])    
     # ensure all propertes are there

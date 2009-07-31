@@ -22,18 +22,25 @@ module ActiveCim
 
       # returns the connector we are using
       # if refresh is true
-      def connector(refresh = false)
+      def connector(refresh = false)        
         if defined?(@connector) || superclass == Object
-          @connector = Connector.create if refresh || @connector.nil?
-          @connector.user = user if user
-          # @connector.password = password if password
-          # @connector.timeout = timeout if timeout
+          if refresh || @connector.nil?
+            connector = Connector.create
+          end
           @connector
         else
           superclass.connector
         end
       end
 
+      # sets a new connector
+      def connector=(conn)
+        @connector = conn
+        @connector.user = user if user
+        # @connector.password = password if password
+        # @connector.timeout = timeout if timeout
+      end          
+      
       # the URI of the CIM server we are connecting to
       def site
         if defined?(@site)
@@ -162,8 +169,6 @@ module ActiveCim
         coll = []
         connector.each_instance("#{site}:#{cim_class_name}") do |ins_path|
           instance = connector.instance(ins_path)
-          pp instance
-          exit 1
           coll << rubyize_fields(instance)
         end
         instantiate_collection(coll)
@@ -216,7 +221,11 @@ module ActiveCim
     end
     
     def connector(refresh = false)
-      self.class.connector(refresh)
+      self.class.connector(refresh, opts)
+    end
+
+    def connector=(conn)
+      self.class.connector = conn
     end
     
     def new?
