@@ -19,8 +19,11 @@ class TC_ActiveCim_Base < Test::Unit::TestCase
   def test_base
 
     CIM_FileSystem::connector = ActiveCim::TestConnector.new(test_data("test_connector"))
+    
     fss = CIM_FileSystem.find(:all)
 
+    assert_equal("#{CIM_URI}:CIM_FileSystem", CIM_FileSystem.object_path)
+    assert_equal([:cs_creation_class_name, :cs_name, :creation_class_name, :name], CIM_FileSystem.keys)
     assert_equal(3, fss.size)
     assert_equal("74355306496", fss.first.available_space)
     

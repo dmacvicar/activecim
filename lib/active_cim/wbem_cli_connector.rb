@@ -133,7 +133,7 @@ module ActiveCim
       end
       # note, the output does not have URI schema
       # and the full line is not a valid URI
-      stdout
+      stdout.read
     end
 
   end

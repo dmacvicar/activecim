@@ -3,19 +3,41 @@ require'activesupport'
 require 'uri'
 require 'pp'
 
+require 'active_cim/connector'
+
 #
 # ActiveRecord like access for CIM data
 #
-# class Linux_EthernetPort < ActiveCim::Base
-#  self.site = "http://localhost/root/cimv2"
-# end
-#
-# ports = Linux_EthernetPort.find(:all)
-#
 module ActiveCim
-  
+  #
   # ActiveCim::Base is the base class for CIM models
   # you want to proxy in your applications
+  #
+  # It can be used with almost no defaults, by naming the ruby class
+  # as the CIM class you want to access:
+  #
+  # class Linux_EthernetPort < ActiveCim::Base
+  #  self.site = "http://localhost/root/cimv2"
+  # end
+  #
+  # You can query all instances:
+  #
+  # ports = Linux_EthernetPort.find(:all)
+  #
+  # and access attributes of each instance just under the
+  # CIM attribute name, in the ruby convention form.
+  # For example, if fs is an object from the CIM_FileSystem class,
+  # you can access the AvailableSpace property defined in the
+  # CIM schema by calling fs.available_space
+  #
+  # You can also name the class with a normal name, and set the
+  # cim_class_name attribute:
+  #
+  # class FileSystem < ActiveCim::Base
+  #  self.site = "http://localhost/root/cimv2"
+  #  self.cim_class_name = "CIM_FileSystem"
+  # end
+  #
   class Base
   
     class << self
@@ -25,7 +47,10 @@ module ActiveCim
       def connector(refresh = false)        
         if defined?(@connector) || superclass == Object
           if refresh || @connector.nil?
-            connector = Connector.create
+            @connector = ActiveCim::Connector.create
+            @connector.user = user if user
+            # @connector.password = password if password
+            # @connector.timeout = timeout if timeout
           end
           @connector
         else
@@ -61,7 +86,19 @@ module ActiveCim
           @password = URI.decode(@site.password) if @site.password
         end
       end
- 
+
+      # the URI of the CIM server we are connecting to
+      def object_path
+        "#{site}:#{cim_class_name}"
+      end
+
+      # which properties are defined as keys
+      def keys
+        keys =[]
+        connector.each_key(object_path) { |k| keys << k }
+        keys.map { |k| rubyize(k.to_s).to_sym }
+      end
+      
       # User authentication for the CIMOM. Not used yet
       def user
         # Not using superclass_delegating_reader. See +site+ for explanation
@@ -78,13 +115,17 @@ module ActiveCim
         @user = user
       end
 
-      # CIM class name this model represents. By default
-      # it is taken from the ruby class name
+      # CIM class name this model represents. By default it is taken from the
+      # ruby class name
+      #
+      # However, as the ruby class name is used for serialization, if you want
+      # a more standard name for your serialized collections, you can
+      # use a normal name for the ruby class and set the CIM class manually
       #
       # Analog to element name in the REST world
       def cim_class_name
         if defined?(@cim_class_name)
-          @cim_class_name
+          return @cim_class_name
         end
         to_s
       end
@@ -167,37 +208,38 @@ module ActiveCim
       # Find every resource
       def find_every(options)
         coll = []
-        connector.each_instance("#{site}:#{cim_class_name}") do |ins_path|
-          instance = connector.instance(ins_path)
-          coll << rubyize_fields(instance)
+        connector.each_instance("#{site}:#{cim_class_name}") do |object_path|
+          properties = connector.instance(object_path)
+          # get the properties
+          properties = rubyize_fields(properties)
+          instance = instantiate_instance(object_path, properties)
+          coll << instance
         end
-        instantiate_collection(coll)
+        coll
       end
  
       # Find a single instance
       def find_one(options)
         raise "Not implemented"
       end
- 
-      def instantiate_collection(collection)
-          collection.collect! { |record| instantiate_record(record) }
-      end
       
       # takes the properties and creates a record from it
       # note that those are the key properties
-      def instantiate_record(record)
-          new(record).tap do |resource|
+      def instantiate_instance(object_path, properties)
+          new(object_path, properties).tap do |instance|
           end
         end
     end
 
     # constructor    
-    def initialize(attributes = {})
+    def initialize(object_path, attributes = {})
+      @object_path = object_path
       @attributes = {}
       @prefix_options = {}
       load(attributes)
     end
 
+    attr_reader :object_path
     attr_accessor :attributes
 
     def load(attributes)
@@ -235,13 +277,12 @@ module ActiveCim
  
     # Gets the <tt>\id</tt> attribute of the resource.
     def id
-      @id.to_s
-      #attributes[self.class.primary_key]
+      @object_path.to_s
     end
  
     # Sets the <tt>\id</tt> attribute of the resource.
     def id=(id)
-      @id = id
+      @object_path = id
       #object_id
       #attributes[self.class.primary_key] = id
     end
@@ -250,19 +291,9 @@ module ActiveCim
       id && id.to_s
     end
 
-    # A method to \reload the attributes of this object from the remote web service.
-    #
-    # ==== Examples
-    # my_branch = Branch.find(:first)
-    # my_branch.name # => "Wislon Raod"
-    #
-    # # Another client fixes the typo...
-    #
-    # my_branch.name # => "Wislon Raod"
-    # my_branch.reload
-    # my_branch.name # => "Wilson Road"
+    # A method to \reload the attributes of this instance from the service
     def reload
-      self.load(self.class.find(to_param, :params => @prefix_options).attributes)
+      self.load(connector.instance(object_path))
     end
 
     # A method to determine if an object responds to a message (e.g., a method call). In Active Resource, a Person object with a
@@ -285,9 +316,10 @@ module ActiveCim
     def exists?
       !new? && self.class.exists?(to_param, :params => prefix_options)
     end
-    
+
+    # Converts to xml. Uses the class name as the element name
     def to_xml(options={})
-      attributes.to_xml({:root => self.class.element_name}.merge(options))
+      attributes.to_xml({:root => self.class.to_s.underscore}.merge(options))
     end
     
     def as_json(options = nil)
@@ -295,7 +327,6 @@ module ActiveCim
     end
     
     def cim_class_name(options = nil)
-      #self.class.cim_class_name(to_param, options || prefix_options)
       self.class.cim_class_name
     end
 
