@@ -6,26 +6,25 @@ module ActiveCim
    
     class WbemCliConnector < Connector
 
-    def initialize(site)
-      super(site)
+    def initialize
     end
     
-    def each_property(klass_name)
-      class_def(klass_name).each do |key,value|
+    def each_property(klass_path)
+      class_def(klass_path).each do |key,value|
         yield key
       end
     end
     
-    def each_key(klass_name)
+    def each_key(klass_path)
       # inneficient for now.. optimize later      
-      class_def(klass_name, :types => true).each do |key,value|
+      class_def(klass_path, :types => true).each do |key,value|
         yield key.to_s[0..key.to_s.size-2].to_sym if key.to_s.last == "#"
       end
     end
     
     # goes through every class available on the server
-    def each_class_name
-      out = run_wbem_cli('ecn', "#{site}")
+    def each_class_name(path)
+      out = run_wbem_cli('ecn', "#{path}")
       out.each do |line|
         # yield only the object path URI path
         line.chomp!
@@ -39,17 +38,36 @@ module ActiveCim
     # iterates over each instance giving
     # on each iteration the fields needed to
     # identify the instance
-    def each_instance(klass_name)
-      each_instance_path(klass_name) do |path|
-        yield fields(path)
+    def each_instance(klass_path)
+
+      out = run_wbem_cli('ein', "#{klass_path}")
+      out.each do |line|
+        next if line.empty?
+        line.chomp!
+        yield "http://#{line}"
       end
     end
     
-    # get instance given a encoded path
-    # the instance is defin
-    def instance(path)      
-      out = run_wbem_cli('gi', "#{site}:#{path}")
-      fields(path)
+    # get instance given the object path
+    def instance(object_path)
+      out = run_wbem_cli('ei', '-nl', "#{object_path}")
+      raise "Wrong output when retrieving #{object_path}" if out.empty?
+      properties = {}
+      # ignore firt line with object path
+      out.shift
+      out.each do |line|
+        line.chomp!
+        next if line.empty?
+        #raise "Unknown output when retrieving #{object_path}" if line[0] == "-"
+        k, v = line.split("=")
+        k = $1 if k =~ /-(.+)/
+        #raise ("Unknown output when retrieving key in #{object_path") if key.blank?
+        v = $1 if v =~ /\"(.+)\"/
+        # correct null usage
+        v = nil if v == "NULL"
+        properties.store(k.to_sym, v)
+      end
+      properties
     end
 
     ## private methods ##
@@ -57,33 +75,18 @@ module ActiveCim
     # runs wbem gc to get class definition and
     # if :types => true also pass -t to get the
     # property types (key, array)
-    def class_def(klass_name, opts = {})
+  def class_def(klass_path, opts ={})
       # if :types => true then we get the types
       args = []
       args << 'gc'
       args << '-t' if opts[:types]
-      args << "#{site}:#{klass_name}"
+      args << "#{klass_path}"
       out = run_wbem_cli(*args)
       raise "Bad response" if out.empty?
       # this stupid response does not have the dot between the class
       # name, so lets build it
       cn, path = out.first.chomp.split(" ")
-      props = fields("#{klass_name}.#{path}")
-    end
-    
-    # iterates over each path describing an instance
-    def each_instance_path(klass_name)      
-      out = run_wbem_cli('ein', "#{site}:#{klass_name}")
-      out.each do |line|
-        next if line.empty?
-        line.chomp!
-        # split by : and take the 3rd part
-        # ie: localhost:5988/root/cimv2:CIM_ServiceAccessPoint
-        # find the second :
-        index = line.index(':', line.index(':'))
-        path = line[index, line.size]
-        yield path if not path.nil?
-      end
+      props = fields("#{path}")
     end
     
     # takes object path (only the path)
@@ -94,9 +97,9 @@ module ActiveCim
     # output: { :SystemCreationClassName = > "Linux_ComputerSystem", :SystemName => "tarro", :CreationClassName = > "Linux_EthernetPort", :DeviceID => "eth0"}
     # 
     def fields(path)
-      fields = Hash.new
+      fields = {}
       # split the part after the CIM class name
-      pairs = path[path.index(".") + 1, path.size].chomp.split(',')
+      pairs = path.chomp.split(',')
       pairs.each do |pair|
         key, value = pair.split('=')
         value = value.gsub(/"/, "") if not value.nil?

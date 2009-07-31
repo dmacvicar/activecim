@@ -27,16 +27,26 @@ class TC_WbemCliConnectorTest < Test::Unit::TestCase
 
   def test_connector_wbem_cli
     
-    conn = ActiveCim::WbemCliConnector.new(@uri)
+    conn = ActiveCim::WbemCliConnector.new
 
     # simulate wbemcli output and return the fixtures
     # mock wbemcli calls, we only want to test how the connector
     # deal with its output
-    conn.stubs(:run_wbem_cli).with('gc', '-t', @uri).returns(cli_output_fixture("gc-t-Linux_Ext3FileSystem"))
-    conn.stubs(:run_wbem_cli).with('gc', @uri).returns(cli_output_fixture("gc-Linux_Ext3FileSystem"))
+    conn.stubs(:run_wbem_cli).with('gc', '-t', "#{@uri}:Linux_Ext3FileSystem").returns(cli_output_fixture("gc-t-Linux_Ext3FileSystem"))
+    conn.stubs(:run_wbem_cli).with('gc', "#{@uri}:Linux_Ext3FileSystem").returns(cli_output_fixture("gc-Linux_Ext3FileSystem"))
+
+
+        conn.stubs(:run_wbem_cli).with('gc', '-t', "#{@uri}:CIM_FileSystem").returns(cli_output_fixture("gc-t-CIM_FileSystem"))
+    conn.stubs(:run_wbem_cli).with('gc', "#{@uri}:CIM_FileSystem").returns(cli_output_fixture("gc-CIM_FileSystem"))
+    
     conn.stubs(:run_wbem_cli).with('ecn', @uri).returns(cli_output_fixture("ecn"))
     conn.stubs(:run_wbem_cli).with('ein', "#{@uri}:Linux_Ext3FileSystem").returns(cli_output_fixture("ein-Linux_Ext3FileSystem"))
+
     conn.stubs(:run_wbem_cli).with('ein', "#{@uri}:CIM_FileSystem").returns(cli_output_fixture("ein-CIM_FileSystem"))
+
+    conn.stubs(:run_wbem_cli).with do |cmd, path|
+      cmd == 'gi' and path =~ /Linux_NFS/
+    end.returns(cli_output_fixture("gi-CIM_FileSystem-1"))
 
     # test basic support methods first
 
@@ -55,7 +65,8 @@ class TC_WbemCliConnectorTest < Test::Unit::TestCase
     instances = []
     conn.each_instance('Linux_Ext3FileSystem') { |i| instances << i }
 
-    pp instances
+    #pp instances
+    assert_equal(1, instances.size)
     
     assert_equal("/dev/disk/by-id/scsi-SATA_SAMSUNG_HD160JJS0XXJ1DP601084-part2", instances.first[:Name])
     
@@ -64,9 +75,14 @@ class TC_WbemCliConnectorTest < Test::Unit::TestCase
     #assert_equal("ext3", instances.first[:FilesystemType])
 
     instances = []
-    conn.each_instance('CIM_FileSystem') { |i| instances << i }
-    pp instances
-    
+    conn.each_instance_path('CIM_FileSystem') do |ins|
+      pp conn.instance(ins)
+      instances << ins
+    end
+
+    assert_equal( 3, instances.size)
+
+    assert_equal( "0A:00:27:00:00:00", instances.first[:PermanentAddress])
   end
   
 end

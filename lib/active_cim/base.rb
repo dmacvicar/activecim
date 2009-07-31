@@ -24,7 +24,7 @@ module ActiveCim
       # if refresh is true
       def connector(refresh = false)
         if defined?(@connector) || superclass == Object
-          @connector = Connector.create(site) if refresh || @connector.nil?
+          @connector = Connector.create if refresh || @connector.nil?
           @connector.user = user if user
           # @connector.password = password if password
           # @connector.timeout = timeout if timeout
@@ -160,7 +160,12 @@ module ActiveCim
       # Find every resource
       def find_every(options)
         coll = []
-        connector.each_instance(cim_class_name) { |instance| coll << rubyize_fields(instance) }
+        connector.each_instance("#{site}:#{cim_class_name}") do |ins_path|
+          instance = connector.instance(ins_path)
+          pp instance
+          exit 1
+          coll << rubyize_fields(instance)
+        end
         instantiate_collection(coll)
       end
  
