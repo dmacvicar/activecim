@@ -4,7 +4,7 @@ require 'active_cim/base'
 require 'pp'
 
 class Linux_EthernetPort < ActiveCim::Base
-  self.site = "http://localhost/root/cimv2"
+  self.site = "http://localhost:5988/root/cimv2"
 end
 
 class TC_ActiveCim_Base < Test::Unit::TestCase

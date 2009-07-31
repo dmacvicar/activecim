@@ -75,11 +75,14 @@ module ActiveCim
     def each_instance_path(klass_name)      
       out = run_wbem_cli('ein', "#{site}:#{klass_name}")
       out.each do |line|
+        next if line.empty?
         line.chomp!
         # split by : and take the 3rd part
         # ie: localhost:5988/root/cimv2:CIM_ServiceAccessPoint
-        name = line.split(':')[ line.count(':')  ]
-        yield name if not name.nil?
+        # find the second :
+        index = line.index(':', line.index(':'))
+        path = line[index, line.size]
+        yield path if not path.nil?
       end
     end
     
