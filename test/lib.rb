@@ -18,7 +18,7 @@ module Sblim
     #
     # find Tokyo Tyrant lib
 
-    paths = [ "/usr/lib/libcimcclient.so" ]
+    paths = [ "/usr/lib/libcimcclient.so", "/usr/lib64/libcimcclient.so" ]
 
     begin
  

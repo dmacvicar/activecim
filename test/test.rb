@@ -1,5 +1,5 @@
 
-$: << File.join(File.dirname(__FILE__), "..", "ext", "sfcc")
+# $: << File.join(File.dirname(__FILE__), "..", "ext", "sfcc")
 $: << File.join(File.dirname(__FILE__), "..", "lib")
 
 require 'sfcc'
@@ -20,3 +20,4 @@ client.each_class_name do |cn|
   puts cn
 end
 
+puts "BYE"

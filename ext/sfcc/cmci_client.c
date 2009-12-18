@@ -64,6 +64,7 @@ client_mark( client_wrapper_t *r )
 static void
 client_free( client_wrapper_t *wrapper )
 {
+  if (wrapper->msg) CMRelease(wrapper->msg);
   if(wrapper->client) wrapper->client->ft->release(wrapper->client);
   if(wrapper->ce) wrapper->ce->ft->release(wrapper->ce);
   free( wrapper );
@@ -85,7 +86,6 @@ client_initialize( int argc, VALUE *argv, VALUE self )
 
   client_wrapper_t *wrapper = client_unwrap( self );
   //wrapper->ce = NewCIMCEnv("SfcbLocal",0,&(wrapper->rc),&(wrapper->msg));
-
   wrapper->ce = NewCIMCEnv("XML", 0, &(wrapper->rc), &(wrapper->msg));
   if ( wrapper->ce == NULL )
   {
@@ -114,13 +114,13 @@ client_initialize( int argc, VALUE *argv, VALUE self )
 
   wrapper->client = wrapper->ce->ft->connect(wrapper->ce, wrapper->cim_host , "http", wrapper->cim_host_port, wrapper->cim_host_userid, wrapper->cim_host_passwd , &status);
 
-  if (!wrapper->client) {
-    rb_raise( rb_eRuntimeError, "Client.new failed: %d", status.rc );
+  if (!wrapper->client || status.rc) {
+    rb_raise( rb_eRuntimeError, "Can't create client: failed with status %d: '%s'", status.rc, wrapper->msg);
+    return Qnil;
   }
+
   //wrapper->transport = rb_funcall( cTransport, rb_intern( "new" ), 1, self );
   return self;
-
-  if(status.msg) CMRelease(status.msg);
 }
 
 static VALUE
@@ -144,9 +144,14 @@ client_each_class_name( VALUE self )
   CIMCStatus status;
 
   client_wrapper_t *wrapper = client_unwrap( self );
+  printf("unwrapped\n");
 
   op = wrapper->ce->ft->newObjectPath(wrapper->ce, "root/cimv2", NULL, &status);
+  printf("op %d\n", status.rc);
+
   enm = wrapper->client->ft->enumClassNames(wrapper->client, op, 0, &status);
+
+  printf("enm\n");
 
   if (!status.rc) {
     while (enm->ft->hasNext(enm, NULL)) {
@@ -172,13 +177,32 @@ client_each_class_name( VALUE self )
   return Qnil;
 }
 
-void Init_sfcc()
+static void deallocate(xmlXPathObjectPtr xpath)
 {
-  VALUE mActiveCim;
-  mActiveCim = rb_define_module("Sfcc");
-  cClient = rb_define_class_under(mActiveCim, "Client", rb_cObject);
-  rb_define_alloc_func( cClient, client_allocate ); 
-  rb_define_method( cClient, "initialize", client_initialize, -1 );
-  rb_define_method( cClient, "each_class_name", client_each_class_name, 0 );
+  NOKOGIRI_DEBUG_START(xpath);
+  xmlXPathFreeNodeSetList(xpath); // despite the name, this frees the xpath but not the contained node set
+  NOKOGIRI_DEBUG_END(xpath);
+}
+
+VALUE Sfcc_wrap_cmci_client(xmlXPathObjectPtr xpath)
+{
+  return Data_Wrap_Struct(cNokogiriXmlXpath, 0, deallocate, xpath);
+}
+
+VALUE SfccCmciClient;
+void init_cmci_client()
+{
+  VALUE sfcc = rb_define_module("Sfcc");
+  VALUE cmci = rb_define_module("Cmci");
+
+  VALUE klass = rb_define_class_under(cmci, "Client", rb_cObject);
+  cSfccCmciClient = klass;
+
+  
+
+  //  cClient = rb_define_class_under(mActiveCim, "Client", rb_cObject);
+  //rb_define_alloc_func( cClient, client_allocate ); 
+  //rb_define_method( cClient, "initialize", client_initialize, -1 );
+  //rb_define_method( cClient, "each_class_name", client_each_class_name, 0 );
 }
 

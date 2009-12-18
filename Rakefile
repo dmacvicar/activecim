@@ -1,6 +1,7 @@
 $: << File.join(File.dirname(__FILE__), "test")
 require 'rubygems'
 require 'rake/gempackagetask'
+require 'rake/extensiontask'
 
 task :default => :test
 
@@ -26,3 +27,5 @@ end
 Rake::GemPackageTask.new(spec) do |pkg|
     pkg.need_tar = true
 end
+
+Rake::ExtensionTask.new('sfcc')
