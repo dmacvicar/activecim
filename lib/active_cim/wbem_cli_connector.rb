@@ -80,7 +80,7 @@ module ActiveCim
     # runs wbem gc to get class definition and
     # if :types => true also pass -t to get the
     # property types (key, array)
-  def class_def(klass_path, opts ={})
+    def class_def(klass_path, opts ={})
       # if :types => true then we get the types
       args = []
       args << 'gc'
