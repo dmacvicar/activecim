@@ -15,12 +15,13 @@ spec = Gem::Specification.new do |s|
     s.author    =   "Duncan Mac-Vicar P., Klaus Kaempf"
     s.email     =   "yast-devel@opensuse.org"
     s.summary   =   "ActiveRecord like API for CIM access"
-    s.files     =   FileList['lib/*.rb', 'test/*'].to_a
+    s.extensions = ["ext/sfcc/extconf.rb"]
+    s.files     =   FileList['lib/*.rb', 'test/*', 'ext/sfcc/client.c', 'ext/sfcc/client.h', 'ext/sfcc/common.h', 'ext/sfcc/extconf.rb'].to_a
     s.require_path  =   "lib"
  #   s.autorequire   =   "ip_admin"
     s.test_files = Dir.glob('tests/*.rb')
-    s.has_rdoc  =   true
-    s.extra_rdoc_files  =   ["README"]
+    s.has_rdoc  =   false
+#    s.extra_rdoc_files  =   ["README"]
 end
 
 Rake::GemPackageTask.new(spec) do |pkg|
