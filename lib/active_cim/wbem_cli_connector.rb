@@ -2,10 +2,11 @@ require 'uri'
 require 'open3'
 require 'active_cim/connector'
 
+#wbemcli cm 'http://localhost:5988/root/cimv2:Linux_OperatingSystem.CSCreationClassName="Linux_ComputerSystem",CSName="piscola.suse.de",CreationClassName="Linux_OperatingSystem",Name="piscola.suse.de"' 'execCmd.cmd="cat /etc/SuSE-release"'
 module ActiveCim
    
-    class WbemCliConnector < Connector
-
+  class WbemCliConnector < Connector
+    
     def initialize
     end
     
@@ -23,29 +24,29 @@ module ActiveCim
     end
     
     # goes through every class available on the server
-    def each_class_name(path)
+    def each_class_name(path)      
       out = run_wbem_cli('ecn', "#{path}")
       out.each_line do |line|
-        # yield only the object path URI path
         line.chomp!
-        # split by : and take the 3rd part
-        # ie: localhost:5988/root/cimv2:CIM_ServiceAccessPoint
-        name = line.split(':')[2]
-        yield name if not name.nil?
+        yield ActiveCim::Cim::ObjectPath.parse("#{path.scheme}://#{line}")
       end
     end
     
     # iterates over each instance giving
     # on each iteration the fields needed to
     # identify the instance
-    def each_instance(klass_path)
-
-      out = run_wbem_cli('ein', "#{klass_path}")
+    def each_instance_name(path)
+      out = run_wbem_cli('ein', "#{path}")
       out.each_line do |line|
-        next if line.empty?
         line.chomp!
-        yield "http://#{line}"
+        yield ActiveCim::Cim::ObjectPath.parse("#{path.scheme}://#{line}")
       end
+    end
+
+    def invoke_method(path, method, params)
+      params_line = params.map {|k,v| "#{k}=\"#{v}\""}
+      method_call = params.empty? ? "#{method}" : "#{method}.#{params_line}"
+      out = run_wbem_cli('cm', "#{path}", method, method_call )
     end
     
     # get instance given the object path

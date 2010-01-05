@@ -1,0 +1,1 @@
+localhost:5988/root/cimv2:Linux_OperatingSystem.CSCreationClassName="Linux_ComputerSystem",CSName="some.suse.de",CreationClassName="Linux_OperatingSystem",Name="some.suse.de"

@@ -1,5 +1,7 @@
 require 'uri'
 require 'open3'
+require 'active_cim/error'
+require 'active_cim/cim/object_path'
 
 module ActiveCim
 
@@ -14,9 +16,11 @@ module ActiveCim
   # The connector class allows ActiveCim::Base to
   # communicate with the actual CIMOM,
   # it is abstracted so different CIM client libraries could
-  # be used, including Web services management
+  # be used, including CIMOM client libraries, native
+  # ruby WBEM implementations, or accessing CIM via Web services
+  # management.
   #
-  # to implement a connector you need to inherit from this
+  # In order to implement a connector you need to inherit from this
   # class and implement the following methods
   #
   # each_key
@@ -30,36 +34,36 @@ module ActiveCim
   class Connector
 
     DEFAULT_CONNECTOR = :wbem_cli
-
+    
     # iterates over properties
     # that identify an instance
     # of the given CIM class
     def each_key(klass_path)
-      raise NotImplemented
+      raise ErrorNotSupported
     end
 
     # iterates over properties
-    def each_property(klass_path)
+    def each_property(path)
       raise NotImplemented
     end
 
     # iterates over all available
-    # CIM classes
+    # CIM classes object paths
     def each_class_name(path)
-      raise NotImplemented
+      raise ErrorNotSupported
     end
 
     # iterates over all instances of
     # a CIM class
     # yielding the instance object path
-    def each_instance(klass_path)
-      raise NotImplemented
+    def each_instance_name(path)
+      raise ErrorNotSupported
     end
 
     # gets an instance
     # returns a hash with the properties
     def instance(object_path)
-      raise NotImplemented
+      raise ErrorNotSupported
     end
     
     def initialize
