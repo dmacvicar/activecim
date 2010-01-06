@@ -2,6 +2,7 @@ require 'uri'
 require 'open3'
 require 'active_cim/error'
 require 'active_cim/cim/object_path'
+require 'enumerator'
 
 module ActiveCim
 
@@ -50,30 +51,54 @@ module ActiveCim
     # iterates over all available
     # CIM classes object paths
     def each_class_name(path)
-      raise ErrorNotSupported
+      begin
+        return Enumerable::Enumerator.new(@connector, :each_class_name, path)
+      rescue NoMethodError
+        raise ErrorNotSupported
+      end
     end
 
     # iterates over all instances of
     # a CIM class
     # yielding the instance object path
     def each_instance_name(path)
-      raise ErrorNotSupported
+      begin
+        return Enumerable::Enumerator.new(@connector, :each_instance_name, path)
+      rescue NoMethodError
+        raise ErrorNotSupported
+      end
     end
 
+    # invokes a CIM method named +method+ with +argsout+
+    # on the CIM instance defined by +path+
+    #
+    # output arguments are merged in the argsout Hash
+    # if it is not nil, or a new hash is created if the
+    # Hash is nil
+    def invoke_method(path, method, argsin, argsout=nil)
+      begin
+        argsout = {} if argsout.nil?
+        @connector.invoke_method(path, method, argsin, argsout)
+      rescue NoMethodError
+        raise ErrorNotSupported
+      end
+    end
+    
     # gets an instance
     # returns a hash with the properties
     def instance(object_path)
       raise ErrorNotSupported
     end
     
-    def initialize
+    def initialize(connector)
+      @connector = connector
     end
  
     # factory method
     def self.create(type = DEFAULT_CONNECTOR)
       case type
         when :wbem_cli
-          WbemCliConnector.new
+          self.new(WbemCliConnector.new)          
         else
           raise "Unknown connector type"
       end

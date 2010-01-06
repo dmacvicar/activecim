@@ -43,10 +43,13 @@ module ActiveCim
       end
     end
 
-    def invoke_method(path, method, params)
-      params_line = params.map {|k,v| "#{k}=\"#{v}\""}
-      method_call = params.empty? ? "#{method}" : "#{method}.#{params_line}"
-      out = run_wbem_cli('cm', "#{path}", method, method_call )
+    def invoke_method(path, method, argsin, argsout)
+      argsin_line = argsin.map {|k,v| "#{k}=\"#{v}\""}
+      method_call = argsin.empty? ? "#{method}" : "#{method}.#{argsin_line}"
+      out = run_wbem_cli('cm', "#{path}", method_call )
+      out.each_line do |line|
+        line.chomp!
+      end
     end
     
     # get instance given the object path

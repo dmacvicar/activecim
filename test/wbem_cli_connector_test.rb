@@ -1,4 +1,5 @@
 require File.join(File.dirname(__FILE__), 'test_helper')
+require 'active_cim/connector'
 require 'active_cim/wbem_cli_connector'
 require 'pp'
 
@@ -20,38 +21,22 @@ class TC_WbemCliConnectorTest < Test::Unit::TestCase
   context "a faked wbemcli command" do    
     setup do
       @path = ActiveCim::Cim::ObjectPath.parse("http://localhost:5988/root/cimv2")
-      @conn = ActiveCim::WbemCliConnector.new
-
-      # simulate wbemcli output and return the fixtures
-      # mock wbemcli calls, we only want to test how the connector
-      # deal with its output
-      @conn.stubs(:run_wbem_cli).with('gc', '-t', "#{@uri}:CIM_FileSystem").returns(cli_output_fixture("gc-t-CIM_FileSystem"))
-      @conn.stubs(:run_wbem_cli).with('gc', "#{@uri}:CIM_FileSystem").returns(cli_output_fixture("gc-CIM_FileSystem"))
-      @conn.stubs(:run_wbem_cli).with('ein', "#{@uri}:CIM_FileSystem").returns(cli_output_fixture("ein-CIM_FileSystem"))
-      @conn.stubs(:run_wbem_cli).with do |cmd, opt, path|
-        cmd == "gi"
-      end.returns(cli_output_fixture("gi-CIM_FileSystem-1"))
-
-      # Fake Linux_OperatingSystem
-      @conn.stubs(:run_wbem_cli).with('ein', "#{@uri}:Linux_OperatingSystem").returns(cli_output_fixture("ein-Linux_OperatingSystem"))
-     
-      # all classes
-      @conn.stubs(:run_wbem_cli).with('ecn', @uri).returns(cli_output_fixture("ecn"))  
+      @conn = ActiveCim::Connector.create(:wbem_cli)
     end
 
-    should "have 70 classes" do
-      assert_equal( 70, @conn.each_class_name(@uri) {}.to_a.size, "There are 70 CIM classes")
+    should "have classes including Linux_OperatingSystem" do
+      assert(@conn.each_class_name(@path).to_a.include?(@path.and_class(:Linux_OperatingSystem)))
     end
 
-    should "have 3 instances of CIM_FileSystem" do
-      instances = []
-      @conn.each_instance(path.and_class(CIM_FileSystem)) do |i|
-        instances << @conn.instance(i)
-      end
-      assert_equal(3, instances.size)    
-      assert_equal("host2:/homedir/dearuser", instances.first[:Name])    
-      # ensure all propertes are there
-      assert_equal( 58, instances.first.size)
+    
+    should "have instances of CIM_FileSystem" do
+      instances = @conn.each_instance_name(@path.and_class(:CIM_FileSystem)).to_a
+      assert ! instances.select { |x| x.class_name == :Linux_Ext3FileSystem }.empty?
+    end
+
+    should "call a method correctly" do
+      argsout = {}
+      @conn.invoke_method(@path.and_class(:Linux_OperatingSystem).with(:CSCreationClassName => "Linux_ComputerSystem", :CSName => "tarro", :CreationClassName => "Linux_OperatingSystem", :Name => "tarro"), :execCmd, {:cmd => "cat /etc/SuSE-release"}, argsout)
     end
   end
 end

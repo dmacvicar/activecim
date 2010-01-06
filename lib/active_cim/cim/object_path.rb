@@ -1,4 +1,5 @@
 require 'uri'
+require 'active_support/core_ext'
 
 module ActiveCim
 
@@ -6,6 +7,10 @@ module ActiveCim
 
     # CIM object path
     class ObjectPath
+
+      def ==(object_path)
+        to_s == object_path.to_s
+      end
       
       # parses an ObjectPath from a string
       def self.parse(string)
@@ -26,7 +31,8 @@ module ActiveCim
 
         @namespace, rest = @uri.path.split(':')
         @namespace = @namespace[1, @namespace.size] if @namespace[0,1] == '/'
-        @class_name, rest = rest.split('.', 2) if rest
+        class_name_str, rest = rest.split('.', 2) if rest
+        @class_name = class_name_str.to_sym if class_name_str
         
         @keys = {}
         if rest
@@ -45,14 +51,14 @@ module ActiveCim
       # => http://localhost/root/cimv2:Linux_ComputerSystem
       def and_class(name)
         op = self.clone
-        op.class_name = name
+        op.class_name = name.to_s.to_sym
         op
         # self.class.parse("#{scheme}://#{host}:#{port}/#{namespace}:#{name}")
       end
 
       # set the class name
       def class_name=(name)
-        @class_name = name
+        @class_name = name.to_s.to_sym
       end
       
       # alias for and_class(name)
@@ -134,13 +140,18 @@ module ActiveCim
 
       # string representation of the object path
       def to_s
-        "#{scheme}://#{host}:#{port}/#{namespace}:#{object_name}"
+        "#{scheme}://#{host}:#{port}/#{namespace}#{object_name_suffix}"
       end
 
       private
 
+      def object_name_suffix
+        return '' if class_name.blank?
+        ":#{object_name}"
+      end
+      
       def instance_suffix_to_s
-        return '' if keys.empty?
+        return '' if keys.blank?
         ".#{(keys.map { |k,v| "#{k}=\"#{v}\"" }).sort.join(',')}"
       end
       
