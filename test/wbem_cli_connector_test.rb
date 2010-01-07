@@ -27,7 +27,6 @@ class TC_WbemCliConnectorTest < Test::Unit::TestCase
     should "have classes including Linux_OperatingSystem" do
       assert(@conn.each_class_name(@path).to_a.include?(@path.and_class(:Linux_OperatingSystem)))
     end
-
     
     should "have instances of CIM_FileSystem" do
       instances = @conn.each_instance_name(@path.and_class(:CIM_FileSystem)).to_a
