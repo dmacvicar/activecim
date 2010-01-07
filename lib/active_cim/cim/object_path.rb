@@ -29,9 +29,13 @@ module ActiveCim
         @port = @uri.port || 5988
         @host = @uri.host || 'localhost'
 
-        @namespace, rest = @uri.path.split(':')
+        @namespace, rest = @uri.path.split(':', 2)
         @namespace = @namespace[1, @namespace.size] if @namespace[0,1] == '/'
-        class_name_str, rest = rest.split('.', 2) if rest
+        parse_object_name(rest)
+      end
+
+      def parse_object_name(string)        
+        class_name_str, rest = string.split('.', 2) if string
         @class_name = class_name_str.to_sym if class_name_str
         
         @keys = {}
@@ -43,6 +47,18 @@ module ActiveCim
         end
       end
 
+      # returns the object path for the named class and keys
+      # in the current namespace
+      #
+      # op = ObjectPath.parse("http://localhost/root/cimv2")
+      # op.and_name('Linux_ComputerSystem.Name="foo"').to_s
+      # => http://localhost/root/cimv2:Linux_ComputerSystem.Name="foo"
+      def and_name(name)
+        op = self.clone
+        op.parse_object_name(name)
+        op
+      end
+      
       # returns the object path for the named class
       # in the current namespace
       #
@@ -53,7 +69,6 @@ module ActiveCim
         op = self.clone
         op.class_name = name.to_s.to_sym
         op
-        # self.class.parse("#{scheme}://#{host}:#{port}/#{namespace}:#{name}")
       end
 
       # set the class name
@@ -118,7 +133,7 @@ module ActiveCim
       # the objects namespace
       def namespace
         if @namespace.nil?
-          ns = URI.unescape(@uri.path.split(':')[0])
+          ns = URI.unescape(@uri.path.split(':', 2)[0])
           if ns[0,1] == '/'
             @namespace = ns[1, ns.size]
           else

@@ -2,8 +2,7 @@ require 'rubygems'
 require'activesupport'
 require 'uri'
 require 'pp'
-
-require 'active_cim/connector'
+require 'active_cim/connector_adapter'
 
 #
 # ActiveRecord like access for CIM data
@@ -86,7 +85,7 @@ module ActiveCim
       def connector(refresh = false)        
         if defined?(@connector) || superclass == Object
           if refresh || @connector.nil?
-            @connector = ActiveCim::Connector.create
+            @connector = ActiveCim::ConnectorAdapter.create
             @connector.user = user if user
             # @connector.password = password if password
             # @connector.timeout = timeout if timeout
@@ -132,11 +131,11 @@ module ActiveCim
       end
 
       # which properties are defined as keys
-      def keys
-        keys =[]
-        connector.each_key(object_path) { |k| keys << k }
-        keys.map { |k| rubyize(k.to_s).to_sym }
-      end
+      #def keys
+      #  keys =[]
+      #  connector.each_key(object_path) { |k| keys << k }
+      #  keys.map { |k| rubyize(k.to_s).to_sym }
+      #end
       
       # User authentication for the CIMOM. Not used yet
       def user
@@ -247,7 +246,8 @@ module ActiveCim
       # Find every resource
       def find_every(options)
         coll = []
-        connector.each_instance_name("#{site}:#{cim_class_name}") do |object_path|
+        klass_path = ActiveCim::Cim::ObjectPath.parse("#{site}:#{cim_class_name}")
+        connector.instance_names(klass_path).each do |object_path|
           properties = connector.instance_properties(object_path)
           # get the properties
           properties = rubyize_fields(properties)

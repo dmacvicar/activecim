@@ -1,6 +1,4 @@
-
-require 'test_helper'
-require 'active_cim/test_connector'
+require File.join(File.dirname(__FILE__), 'test_helper')
 require 'active_cim/base'
 
 CIM_URI = "http://localhost:5988/root/cimv2"
@@ -17,18 +15,16 @@ class TC_ActiveCim_Base < Test::Unit::TestCase
   # end
 
   def test_base
-
-    CIM_FileSystem::connector = ActiveCim::TestConnector.new(test_data("test_connector"))
-    
-    fss = CIM_FileSystem.find(:all)
+    filesystems = CIM_FileSystem.find(:all)
 
     assert_equal("#{CIM_URI}:CIM_FileSystem", CIM_FileSystem.object_path)
-    assert_equal([:cs_creation_class_name, :cs_name, :creation_class_name, :name], CIM_FileSystem.keys)
-    assert_equal(3, fss.size)
-    assert_equal("74355306496", fss.first.available_space)
+    #assert_equal([:cs_creation_class_name, :cs_name, :creation_class_name, :name], CIM_FileSystem.keys)
+    assert(! filesystems.empty?)
+    assert(filesystems.first.available_space > 0)
+    assert_kind_of(Fixnum, filesystems.first.available_space)
     
     assert_nothing_raised do
-      fss.each do |fs|
+      filesystems.each do |fs|
         fs.file_system_size
       end
     end

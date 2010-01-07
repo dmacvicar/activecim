@@ -1,35 +1,63 @@
 require 'uri'
 require 'open3'
-require 'active_cim/connector'
+require 'active_cim/connector_adapter'
 require 'nokogiri'
 
 #wbemcli cm 'http://localhost:5988/root/cimv2:Linux_OperatingSystem.CSCreationClassName="Linux_ComputerSystem",CSName="piscola.suse.de",CreationClassName="Linux_OperatingSystem",Name="piscola.suse.de"' 'execCmd.cmd="cat /etc/SuSE-release"'
 module ActiveCim
    
-  class WbemCliConnector < Connector
+  class WbemCliConnector
     
-    def initialize
+    # Connector API
+    
+    def class_names(path)
+      Enumerable::Enumerator.new(self, :each_class_name, path)
     end
-    
-    def each_property(klass_path)
-      class_def(klass_path).each do |key,value|
-        yield key
+
+    def instance_names(path)
+      Enumerable::Enumerator.new(self, :each_instance_name, path)
+    end
+
+    def class_properties(path)
+      property_types(path).keys
+    end        
+
+    def instance_property_value(path, property_name)
+      instance_properties(object_path)[property_name]
+    end        
+
+    def invoke_method(path, method, argsin, argsout)
+      argsin_line = argsin.map {|k,v| "#{k}=\"#{v}\""}
+      method_call = argsin.empty? ? "#{method}" : "#{method}.#{argsin_line}"
+      out = run_wbem_cli('cmx', "#{path}", method_call )
+
+      doc = Nokogiri::XML.parse(out)
+      doc.xpath("//PARAMVALUE").each do |node|
+        param_name = node.attributes['NAME'].text.to_sym
+        param_value = string_to_type(node.xpath("./VALUE").first.text, node.attributes['PARAMTYPE'].text.to_sym)
+        argsout[param_name] = param_value
       end
-    end
-    
-    def each_key(klass_path)
-      # inneficient for now.. optimize later      
-      class_def(klass_path, :types => true).each do |key,value|
-        yield key.to_s[0..key.to_s.size-2].to_sym if key.to_s.last == "#"
+      doc.xpath("//RETURNVALUE").each do |retnode|
+        val_str = retnode.xpath("./VALUE").first.text
+        return string_to_type(val_str, retnode.attributes['PARAMTYPE'].text.to_sym)
       end
+      raise "No return value for #{method}"
     end
     
-    # goes through every class available on the server
-    def each_class_name(path)      
+    # Implementation details and helpers
+    
+    def each_class_name(path)
       out = run_wbem_cli('ecn', "#{path}")
       out.each_line do |line|
         line.chomp!
         yield ActiveCim::Cim::ObjectPath.parse("#{path.scheme}://#{line}")
+      end
+    end
+
+    def each_key(klass_path)
+      # inneficient for now.. optimize later      
+      class_def(klass_path, :types => true).each do |key,value|
+        yield key.to_s[0..key.to_s.size-2].to_sym if key.to_s.last == "#"
       end
     end
     
@@ -48,8 +76,8 @@ module ActiveCim
     def instance_properties(object_path)
       out = run_wbem_cli('gi', '-nl', "#{object_path}")
       raise "Wrong output when retrieving #{object_path}" if out.empty?
-      properties = {}
       counter = 0
+      properties = {}
       out.each_line do |line|
         # ignore firt line with object path
         if counter == 0
@@ -61,29 +89,36 @@ module ActiveCim
         #raise "Unknown output when retrieving #{object_path}" if line[0] == "-"
         k, v = line.split("=")
         k = $1 if k =~ /-(.+)/
-        #raise ("Unknown output when retrieving key in #{object_path") if key.blank?
         v = $1 if v =~ /\"(.+)\"/
-        # correct null usage
-        v = nil if v == "NULL"
-        v = false if v == "FALSE"
+        #raise ("Unknown output when retrieving key in #{object_path") if key.blank?
+        property_name = k.to_sym
+
+        # types
+        v = string_to_type(v, property_types(object_path)[property_name])
         properties.store(k.to_sym, v)
       end
       properties
     end
-    
-    def invoke_method(path, method, argsin, argsout)
-      argsin_line = argsin.map {|k,v| "#{k}=\"#{v}\""}
-      method_call = argsin.empty? ? "#{method}" : "#{method}.#{argsin_line}"
-      out = run_wbem_cli('cm', "#{path}", method_call )
-      out.each_line do |line|
-        line.chomp!
-      end
-    end
-
+ 
     #private
     
     ## private methods ##
 
+    def string_to_type(string, type)
+      case type
+      when :boolean
+        string == "FALSE" ? false : true
+      when :string
+        string.to_s
+      when :uint8, :uint16, :uint32, :uint64
+        string.to_i
+      when :datetime
+        Time.now
+      else
+        nil
+      end
+    end
+    
     # runs wbem gc to get class definition and
     # if :types => true also pass -t to get the
     # property types (key, array)
@@ -101,6 +136,18 @@ module ActiveCim
       props = fields("#{path}")
     end
 
+    # gives an array with the properties
+    # for this class
+    def class_properties(path)
+      property_types(path).keys
+    end
+
+    def class_methods(path)
+      method_types(path).keys
+    end
+    
+    # private methods to discover properties and method
+    # types and signatures
     def property_types(path)
       parse_types(path) if @property_types.nil?
       @property_types

@@ -16,6 +16,7 @@ class ActiveCimCimObjectPathTest < Test::Unit::TestCase
       assert ! op.instance?
       assert_equal({}, op.keys)
       assert_equal 'http://localhost:5988/root/cimv2:Linux_ComputerSystem', op.and_class('Linux_ComputerSystem').to_s
+      assert_equal 'http://localhost:5988/root/cimv2:Linux_ComputerSystem.Name="foo"', op.and_name('Linux_ComputerSystem.Name="foo"').to_s
       assert_equal 'http://localhost:5988/root/cimv2:Linux_ComputerSystem.CreationClassName="Linux_ComputerSystem",Name="some.suse.de"', op.and_class('Linux_ComputerSystem').with(:CreationClassName => 'Linux_ComputerSystem', :Name => 'some.suse.de').to_s
     end
     
@@ -45,5 +46,11 @@ class ActiveCimCimObjectPathTest < Test::Unit::TestCase
       assert_equal keys, op.keys
       assert_equal 'http://localhost:5988/root/cimv2:Linux_ComputerSystem.CreationClassName="Linux_ComputerSystem",Name="some.suse.de"', op.to_s
     end
+
+    should "split the keys correctly" do
+      op = ActiveCim::Cim::ObjectPath.parse('http://localhost:5988/root/cimv2:Linux_NFS.CSCreationClassName="Linux_ComputerSystem",CSName="somehost.suse.de",CreationClassName="Linux_NFS",Name="host:/foo/bar"')
+      assert_equal('http://localhost:5988/root/cimv2:Linux_NFS.CSCreationClassName="Linux_ComputerSystem",CSName="somehost.suse.de",CreationClassName="Linux_NFS",Name="host:/foo/bar"', op.to_s)
+    end
+    
   end
 end
