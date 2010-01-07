@@ -1,28 +1,25 @@
 $: << File.join(File.dirname(__FILE__), "test")
 require 'rubygems'
-require 'rake/gempackagetask'
+gem 'hoe', '>= 2.1.0'
+require 'hoe'
+
+#require 'rake/gempackagetask'
+#require 'rake/rdoctask'
+#require 'rake/testtask'
 
 task :default => :test
 
-task :test do
-  require File.dirname(__FILE__) + '/test/all_tests.rb'
+HOE = Hoe.spec 'active_cim' do
+  developer('Duncan Mac-Vicar P.', 'dmacvicar@suse.de')
+  developer('Klaus Kaempf', 'kkaempf@suse.de')
+  self.summary = "ActiveRecord like API for CIM access"
+  self.description = "ActiveCim is a rails-way of accessing CIM data in a CIMOM/client independent way. Currently it supports access using wbemcli and SBLIM client library"
+  self.readme_file = ['README', ENV['HLANG'], 'rdoc'].compact.join('.')
+  self.history_file = ['CHANGELOG', ENV['HLANG'], 'rdoc'].compact.join('.')
+  self.extra_rdoc_files = FileList['*.rdoc']
+  #self.clean_globs = [
+  #  'lib/sfcc/*.{o,so,bundle,a,log,dll}',
+  #  'lib/sfcc/sfcc.rb',
+  #]
 end
 
-spec = Gem::Specification.new do |s|
-    s.platform  =   Gem::Platform::RUBY
-    s.name      =   "active_cim"
-    s.version   =   "0.1"
-    s.author    =   "Duncan Mac-Vicar P., Klaus Kaempf"
-    s.email     =   "yast-devel@opensuse.org"
-    s.summary   =   "ActiveRecord like API for CIM access"
-    s.files     =   FileList['lib/*.rb', 'test/*', 'ext/sfcc/client.c', 'ext/sfcc/client.h', 'ext/sfcc/common.h', 'ext/sfcc/extconf.rb'].to_a
-    s.require_path  =   "lib"
- #   s.autorequire   =   "ip_admin"
-    s.test_files = Dir.glob('tests/*.rb')
-    s.has_rdoc  =   false
-#    s.extra_rdoc_files  =   ["README"]
-end
-
-Rake::GemPackageTask.new(spec) do |pkg|
-    pkg.need_tar = true
-end
