@@ -1,6 +1,7 @@
 require 'uri'
 require 'open3'
 require 'active_cim/connector'
+require 'nokogiri'
 
 #wbemcli cm 'http://localhost:5988/root/cimv2:Linux_OperatingSystem.CSCreationClassName="Linux_ComputerSystem",CSName="piscola.suse.de",CreationClassName="Linux_OperatingSystem",Name="piscola.suse.de"' 'execCmd.cmd="cat /etc/SuSE-release"'
 module ActiveCim
@@ -43,17 +44,8 @@ module ActiveCim
       end
     end
 
-    def invoke_method(path, method, argsin, argsout)
-      argsin_line = argsin.map {|k,v| "#{k}=\"#{v}\""}
-      method_call = argsin.empty? ? "#{method}" : "#{method}.#{argsin_line}"
-      out = run_wbem_cli('cm', "#{path}", method_call )
-      out.each_line do |line|
-        line.chomp!
-      end
-    end
-    
     # get instance given the object path
-    def instance(object_path)
+    def instance_properties(object_path)
       out = run_wbem_cli('gi', '-nl', "#{object_path}")
       raise "Wrong output when retrieving #{object_path}" if out.empty?
       properties = {}
@@ -78,7 +70,18 @@ module ActiveCim
       end
       properties
     end
+    
+    def invoke_method(path, method, argsin, argsout)
+      argsin_line = argsin.map {|k,v| "#{k}=\"#{v}\""}
+      method_call = argsin.empty? ? "#{method}" : "#{method}.#{argsin_line}"
+      out = run_wbem_cli('cm', "#{path}", method_call )
+      out.each_line do |line|
+        line.chomp!
+      end
+    end
 
+    #private
+    
     ## private methods ##
 
     # runs wbem gc to get class definition and
@@ -96,6 +99,41 @@ module ActiveCim
       # name, so lets build it
       cn, path = out.chomp.split(" ")
       props = fields("#{path}")
+    end
+
+    def property_types(path)
+      parse_types(path) if @property_types.nil?
+      @property_types
+    end
+
+    def method_types(path)
+      parse_types(path) if @method_types.nil?
+      @method_types
+    end
+
+    def parameter_types(path, method_name=nil)
+      parse_types(path) if @parameter_types.nil?
+      method_name ? @parameter_types[method_name.to_sym] : @parameter_types
+    end
+    
+    def parse_types(path)
+      @property_types = {}
+      @method_types = {}
+      @parameter_types = {}
+      out = run_wbem_cli('gcd', path)      
+      doc = Nokogiri::XML.parse(out)
+      doc.xpath("//PROPERTY").each do |node|
+        @property_types[node.attributes['NAME'].text.to_sym] = node.attributes['TYPE'].text.to_sym
+      end
+      doc.xpath("//METHOD").each do |node|
+        method_name = node.attributes['NAME'].text.to_sym
+        @method_types[method_name] = node.attributes['TYPE'].text.to_sym
+        @parameter_types[method_name] = {}
+        node.xpath("./PARAMETER").each do |param_node|
+          param_name = param_node.attributes['NAME'].text.to_sym
+          @parameter_types[method_name][param_name] = param_node.attributes['TYPE'].text.to_sym
+        end
+      end
     end
     
     # takes object path (only the path)
@@ -116,7 +154,7 @@ module ActiveCim
       end
       fields
     end
-
+    
     # executes wbemcli and controls error handling
     def run_wbem_cli(*args)
       # quote args and join them

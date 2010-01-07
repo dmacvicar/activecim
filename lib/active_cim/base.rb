@@ -247,8 +247,8 @@ module ActiveCim
       # Find every resource
       def find_every(options)
         coll = []
-        connector.each_instance("#{site}:#{cim_class_name}") do |object_path|
-          properties = connector.instance(object_path)
+        connector.each_instance_name("#{site}:#{cim_class_name}") do |object_path|
+          properties = connector.instance_properties(object_path)
           # get the properties
           properties = rubyize_fields(properties)
           instance = instantiate_instance(object_path, properties)

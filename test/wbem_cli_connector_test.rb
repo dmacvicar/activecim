@@ -37,5 +37,12 @@ class TC_WbemCliConnectorTest < Test::Unit::TestCase
       argsout = {}
       @conn.invoke_method(@path.and_class(:Linux_OperatingSystem).with(:CSCreationClassName => "Linux_ComputerSystem", :CSName => "tarro", :CreationClassName => "Linux_OperatingSystem", :Name => "tarro"), :execCmd, {:cmd => "cat /etc/SuSE-release"}, argsout)
     end
+
+    should "get types correctly" do
+      pp @conn.connector.property_types(@path.and_class(:Linux_OperatingSystem))
+      pp @conn.connector.method_types(@path.and_class(:Linux_OperatingSystem))
+      pp @conn.connector.parameter_types(@path.and_class(:Linux_OperatingSystem))
+    end
+    
   end
 end

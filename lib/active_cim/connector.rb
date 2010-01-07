@@ -93,7 +93,11 @@ module ActiveCim
     def initialize(connector)
       @connector = connector
     end
- 
+
+    def connector
+      @connector
+    end
+    
     # factory method
     def self.create(type = DEFAULT_CONNECTOR)
       case type
