@@ -22,9 +22,32 @@ module ActiveCim
       property_types(path).keys
     end        
 
-    def instance_property_value(path, property_name)
-      instance_properties(object_path)[property_name]
-    end        
+    # get instance given the object path
+    def instance_properties(object_path)
+      out = run_wbem_cli('gi', '-nl', "#{object_path}")
+      raise "Wrong output when retrieving #{object_path}" if out.empty?
+      counter = 0
+      properties = {}
+      out.each_line do |line|
+        # ignore firt line with object path
+        if counter == 0
+          counter += 1
+          next
+        end
+        line.chomp!
+        next if line.empty?
+        #raise "Unknown output when retrieving #{object_path}" if line[0] == "-"
+        k, v = line.split("=",2)
+        k = $1 if k =~ /-(.+)/
+        v = $1 if v =~ /\"(.*)\"/
+        #raise ("Unknown output when retrieving key in #{object_path") if key.blank?
+        property_name = k.to_sym
+        # types
+        v = string_to_type(v, property_types(object_path.class_path)[property_name])
+        properties.store(k.to_sym, v)
+      end
+      properties
+    end
 
     def invoke_method(path, method, argsin, argsout)
       argsin_line = argsin.map {|k,v| "#{k}=\"#{v}\""}
@@ -45,7 +68,11 @@ module ActiveCim
     end
     
     # Implementation details and helpers
-    
+
+    def initialize
+      @property_types = nil
+    end
+
     def each_class_name(path)
       out = run_wbem_cli('ecn', "#{path}")
       out.each_line do |line|
@@ -70,34 +97,6 @@ module ActiveCim
         line.chomp!
         yield ActiveCim::Cim::ObjectPath.parse("#{path.scheme}://#{line}")
       end
-    end
-
-    # get instance given the object path
-    def instance_properties(object_path)
-      out = run_wbem_cli('gi', '-nl', "#{object_path}")
-      raise "Wrong output when retrieving #{object_path}" if out.empty?
-      counter = 0
-      properties = {}
-      out.each_line do |line|
-        # ignore firt line with object path
-        if counter == 0
-          counter += 1
-          next
-        end
-        line.chomp!
-        next if line.empty?
-        #raise "Unknown output when retrieving #{object_path}" if line[0] == "-"
-        k, v = line.split("=")
-        k = $1 if k =~ /-(.+)/
-        v = $1 if v =~ /\"(.+)\"/
-        #raise ("Unknown output when retrieving key in #{object_path") if key.blank?
-        property_name = k.to_sym
-
-        # types
-        v = string_to_type(v, property_types(object_path)[property_name])
-        properties.store(k.to_sym, v)
-      end
-      properties
     end
  
     #private
@@ -136,12 +135,6 @@ module ActiveCim
       props = fields("#{path}")
     end
 
-    # gives an array with the properties
-    # for this class
-    def class_properties(path)
-      property_types(path).keys
-    end
-
     def class_methods(path)
       method_types(path).keys
     end
@@ -167,7 +160,7 @@ module ActiveCim
       @property_types = {}
       @method_types = {}
       @parameter_types = {}
-      out = run_wbem_cli('gcd', path)      
+      out = run_wbem_cli('gcd', path)
       doc = Nokogiri::XML.parse(out)
       doc.xpath("//PROPERTY").each do |node|
         @property_types[node.attributes['NAME'].text.to_sym] = node.attributes['TYPE'].text.to_sym

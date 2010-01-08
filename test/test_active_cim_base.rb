@@ -25,7 +25,10 @@ class TC_ActiveCim_Base < Test::Unit::TestCase
     
     assert_nothing_raised do
       filesystems.each do |fs|
-        fs.file_system_size
+        assert_kind_of Fixnum, fs.file_system_size
+        assert fs.file_system_size > 0
+
+        assert_kind_of String, fs.root
       end
     end
     

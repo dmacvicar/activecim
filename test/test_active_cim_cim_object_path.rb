@@ -18,6 +18,7 @@ class ActiveCimCimObjectPathTest < Test::Unit::TestCase
       assert_equal 'http://localhost:5988/root/cimv2:Linux_ComputerSystem', op.and_class('Linux_ComputerSystem').to_s
       assert_equal 'http://localhost:5988/root/cimv2:Linux_ComputerSystem.Name="foo"', op.and_name('Linux_ComputerSystem.Name="foo"').to_s
       assert_equal 'http://localhost:5988/root/cimv2:Linux_ComputerSystem.CreationClassName="Linux_ComputerSystem",Name="some.suse.de"', op.and_class('Linux_ComputerSystem').with(:CreationClassName => 'Linux_ComputerSystem', :Name => 'some.suse.de').to_s
+      assert_equal op.and_class('Linux_ComputerSystem'), op.and_class('Linux_ComputerSystem').with(:CreationClassName => 'Linux_ComputerSystem', :Name => 'some.suse.de').class_path
     end
     
     should "parse an class object path" do

@@ -20,6 +20,7 @@ module ActiveCim
       # Creates a new object path from an URI or a string
       # representation of an URI
       def initialize(uri)
+        @class_name = nil
         case uri
           when String then @uri = URI.parse(URI.escape(uri))
           when URI then @uri = uri
@@ -47,6 +48,20 @@ module ActiveCim
         end
       end
 
+      # returns the object path for the class of the object
+      # path
+      # op = ObjectPath.parse("http://localhost/root/cimv2")
+      # op.and_name('Linux_ComputerSystem.Name="foo"')
+      # => http://localhost/root/cimv2:Linux_ComputerSystem.Name="foo"
+      #
+      # op.class_path
+      # => http://localhost/root/cimv2:Linux_ComputerSystem
+      def class_path
+        op = self.clone
+        op.keys = {}
+        op
+      end
+      
       # returns the object path for the named class and keys
       # in the current namespace
       #

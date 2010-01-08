@@ -24,11 +24,15 @@ module ActiveCim
       Enumerable::Enumerator.new(cimclass, :each_property).map {|key, value| key}
     end
 
-    #def instance_property_value(path, property_name)
-    #  lazy_init(path)
-    #  
-    #  instance_properties(object_path)[property_name]
-    #end
+    def instance_properties(path)
+      lazy_init(path)
+      op = Sfcc::Cim::ObjectPath.new(path.namespace.to_s, path.class_name.to_s)      
+      path.keys.each do |key, val|
+        op.add_key(key.to_s, val)
+      end
+      instance = client.get_instance(op)
+      instance.properties
+    end
 
     def invoke_method(path, method, argsin, argsout)
       lazy_init(path)
@@ -40,6 +44,10 @@ module ActiveCim
     end
     
     # Implementation
+    def initialize
+      @client = nil
+    end
+    
     def client
       @client
     end

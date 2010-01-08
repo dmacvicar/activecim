@@ -8,17 +8,9 @@ def cli_output_fixture(name)
   File.open(test_data(File.join('wbem_cli_connector', "#{name}.txt"))).read
 end
 
-# This test uses fixtures that simulate wbemcli output
-#
-# ecn.txt
-# ein-Linux_EthernetPort.txt
-# ein-Linux_Ext3FileSystem.txt
-# ein-Linux_NonExistantClass.txt
-# gi-Linux_Ext3FileSystem-1.txt
-#
 class TC_WbemCliConnectorTest < Test::Unit::TestCase
 
-  context "for every connector" do
+  context "connector" do
     [:wbem_cli, :sfcc].each do |connector|
       context "for connector #{connector}" do    
         setup do
@@ -35,6 +27,15 @@ class TC_WbemCliConnectorTest < Test::Unit::TestCase
           assert ! instances.select { |x| x.class_name == :Linux_Ext3FileSystem }.empty?
         end
 
+        should "#{connector}: return properties" do
+          @conn.instance_names(@path.and_class(:CIM_FileSystem)).each do |instance|
+            properties = @conn.instance_properties(instance)
+            assert properties[:FileSystemSize] > 0
+            assert_kind_of Fixnum, properties[:FileSystemSize]
+            assert_kind_of String, properties[:Name]
+          end
+        end
+        
         should "#{connector}: call a method correctly" do
           argsout = {}
           ret = @conn.invoke_method(@path.and_class(:Linux_OperatingSystem).with(:CSCreationClassName => "Linux_ComputerSystem", :CSName => "tarro", :CreationClassName => "Linux_OperatingSystem", :Name => "tarro"), :execCmd, {:cmd => "cat /etc/SuSE-release"}, argsout)
@@ -42,14 +43,6 @@ class TC_WbemCliConnectorTest < Test::Unit::TestCase
           assert(argsout[:out] =~ /VERSION/)
           assert_equal(0, ret)
         end
-
-        #should "get types correctly" do
-        #pp @conn.connector.class_properties(@path.and_class(:Linux_OperatingSystem))
-        #pp @conn.connector.class_methods(@path.and_class(:Linux_OperatingSystem))
-        #pp @conn.connector.property_types(@path.and_class(:Linux_OperatingSystem))
-        #pp @conn.connector.method_types(@path.and_class(:Linux_OperatingSystem))
-        #pp @conn.connector.parameter_types(@path.and_class(:Linux_OperatingSystem))
-        #end
     
       end
     end
