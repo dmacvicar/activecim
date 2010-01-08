@@ -8,30 +8,33 @@ class CIM_FileSystem < ActiveCim::Base
 end
 
 class TC_ActiveCim_Base < Test::Unit::TestCase
-  # def setup
-  # end
 
-  # def teardown
-  # end
+  context "all instances of class FileSystem" do
 
-  def test_base
-    filesystems = CIM_FileSystem.find(:all)
+    setup do 
+      @filesystems = CIM_FileSystem.find(:all)
+    end
 
-    assert_equal("#{CIM_URI}:CIM_FileSystem", CIM_FileSystem.object_path)
-    #assert_equal([:cs_creation_class_name, :cs_name, :creation_class_name, :name], CIM_FileSystem.keys)
-    assert(! filesystems.empty?)
-    assert(filesystems.first.available_space > 0)
-    assert_kind_of(Fixnum, filesystems.first.available_space)
+    should "have an object path" do
+      assert_equal("#{CIM_URI}:CIM_FileSystem", CIM_FileSystem.object_path)
+    end
+
+    should "be at least a filesystem" do
+      assert(! @filesystems.empty?)
+    end
+
+    should "have full properties" do
+      assert(@filesystems.first.available_space > 0)
+      assert_kind_of(Fixnum, @filesystems.first.available_space)
     
-    assert_nothing_raised do
-      filesystems.each do |fs|
-        assert_kind_of Fixnum, fs.file_system_size
-        assert fs.file_system_size > 0
+      assert_nothing_raised do
+        @filesystems.each do |fs|
+          assert_kind_of Fixnum, fs.file_system_size
+          assert fs.file_system_size > 0
 
-        assert_kind_of String, fs.root
+          assert_kind_of String, fs.root
+        end
       end
     end
-    
   end
-  
 end
