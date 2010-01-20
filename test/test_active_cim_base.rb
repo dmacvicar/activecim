@@ -3,7 +3,7 @@ require 'active_cim/base'
 
 CIM_URI = "http://localhost:5988/root/cimv2"
 
-class CIM_FileSystem < ActiveCim::Base
+class CIM_Processor < ActiveCim::Base
   self.site = CIM_URI
 end
 
@@ -14,30 +14,29 @@ end
 
 class TC_ActiveCim_Base < Test::Unit::TestCase
 
-  context "all instances of class FileSystem" do
+  context "all instances of class Processor" do
 
     setup do 
-      @filesystems = CIM_FileSystem.find(:all)
+      @processors = CIM_Processor.find(:all)
     end
 
     should "have an object path" do
-      assert_equal("#{CIM_URI}:CIM_FileSystem", CIM_FileSystem.object_path)
+      assert_equal("#{CIM_URI}:CIM_Processor", CIM_Processor.object_path)
     end
 
-    should "be at least a filesystem" do
-      assert(! @filesystems.empty?)
+    should "be at least a processor" do
+      assert(! @processors.empty?)
     end
 
     should "have full properties" do
-      assert(@filesystems.first.available_space > 0)
-      assert_kind_of(Fixnum, @filesystems.first.available_space)
+      assert(@processors.first.max_clock_speed >= 0)
+      assert_kind_of(Fixnum, @processors.first.max_clock_speed)
     
       assert_nothing_raised do
-        @filesystems.each do |fs|
-          assert_kind_of Fixnum, fs.file_system_size
-          assert fs.file_system_size > 0
-
-          assert_kind_of String, fs.root
+        @processors.each do |p|
+          assert_kind_of Fixnum, p.current_clock_speed
+          assert p.current_clock_speed > 0
+          assert_kind_of String, p.element_name
         end
       end
     end
