@@ -67,11 +67,13 @@ module ActiveCim
       raise "No return value for #{method}"
     end
 
+=begin
     def association_names(path, association_class)
       wbemcli ain -ac CIM_RunningOS 'http://localhost:5988/root/cimv2:Linux_ComputerSystem.CreationClassName="Linux_ComputerSystem",Name="piscola.suse.de"'
 piscola/root/cimv2:Linux_OperatingSystem.CSCreationClassName="Linux_ComputerSystem",CSName="piscola.suse.de",CreationClassName="Linux_OperatingSystem",Name="piscola.suse.de"
     end
-    
+=end
+  
     # Implementation details and helpers
 
     def initialize
