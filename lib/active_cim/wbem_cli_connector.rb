@@ -67,13 +67,10 @@ module ActiveCim
       raise "No return value for #{method}"
     end
 
-=begin
     def association_names(path, association_class)
-      wbemcli ain -ac CIM_RunningOS 'http://localhost:5988/root/cimv2:Linux_ComputerSystem.CreationClassName="Linux_ComputerSystem",Name="piscola.suse.de"'
-piscola/root/cimv2:Linux_OperatingSystem.CSCreationClassName="Linux_ComputerSystem",CSName="piscola.suse.de",CreationClassName="Linux_OperatingSystem",Name="piscola.suse.de"
+      Enumerable::Enumerator.new(self, :each_association_name, path, association_class)
     end
-=end
-  
+
     # Implementation details and helpers
 
     def initialize
@@ -105,7 +102,15 @@ piscola/root/cimv2:Linux_OperatingSystem.CSCreationClassName="Linux_ComputerSyst
         yield ActiveCim::Cim::ObjectPath.parse("#{path.scheme}://#{line}")
       end
     end
- 
+
+    def each_association_name(path, association_class)
+      out = run_wbem_cli('ain', '-ac', "#{association_class}", "#{path}")
+      out.each_line do |line|
+        line.chomp!
+        yield ActiveCim::Cim::ObjectPath.parse("#{path.scheme}://#{line}")
+      end
+    end
+    
     #private
     
     ## private methods ##

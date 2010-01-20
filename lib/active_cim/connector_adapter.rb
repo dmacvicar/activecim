@@ -43,6 +43,11 @@ module ActiveCim
   #  +argsin+ as arguments and add the output arguments to +argsout+
   #  and return the method return value.
   #
+  # association_names(path, association_class)
+  #  Should return an Enumerable with an ActiveCim::Cim::ObjectPath
+  #  for every instance associated with the instance described by +path+
+  #  where the association class is +association_class+
+  #
   class ConnectorAdapter
 
     DEFAULT_CONNECTOR = :wbem_cli
@@ -91,6 +96,15 @@ module ActiveCim
         raise e
       end
     end
+
+    def association_names(path, association_class)
+      begin
+        @connector.association_names(path, association_class)
+      rescue NoMethodError
+        raise ErrorNotSupported
+      end
+    end
+
     
     # Implementation
     

@@ -26,6 +26,7 @@ module ActiveCim
 
         should "return properties" do
           @connector.instance_names(path.and_class(:CIM_Processor)).each do |instance|
+            assert_kind_of ActiveCim::Cim::ObjectPath, instance
             properties = @connector.instance_properties(instance)
             assert properties[:MaxClockSpeed] >= 0
             assert_kind_of Fixnum, properties[:MaxClockSpeed]
@@ -36,12 +37,24 @@ module ActiveCim
         
         should "call a method correctly" do
           argsout = {}
-          ret = @connector.invoke_method(path.and_class(:Linux_OperatingSystem).with(:CSCreationClassName => "Linux_ComputerSystem", :CSName => "tarro", :CreationClassName => "Linux_OperatingSystem", :Name => "tarro"), :execCmd, {:cmd => "cat /etc/SuSE-release"}, argsout)
+          first_os = @connector.instance_names(path.and_class(:CIM_OperatingSystem)).first
+          ret = @connector.invoke_method(first_os, :execCmd, {:cmd => "cat /etc/SuSE-release"}, argsout)
           assert argsout.has_key?(:out)          
           assert(argsout[:out] =~ /VERSION/)
           assert_equal(0, ret)
         end
-          
+
+        should "return association names" do
+          first_computer = @connector.instance_names(path.and_class(:CIM_ComputerSystem)).first
+          assert_not_nil first_computer
+          assoc = @connector.association_names(first_computer, :CIM_RunningOS)
+          assert !assoc.to_a.empty?
+          assoc.each do |assoc|
+            assert_kind_of ActiveCim::Cim::ObjectPath, assoc
+            assert_match(/(.+)_OperatingSystem/, assoc.class_name.to_s)
+          end
+        end
+        
       end
       end
     

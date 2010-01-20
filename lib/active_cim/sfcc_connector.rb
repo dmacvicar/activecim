@@ -42,6 +42,15 @@ module ActiveCim
       end
       out = client.invoke_method(op, method.to_s, argsin, argsout)
     end
+
+    def association_names(path, association_class)
+      lazy_init(path)
+      op = Sfcc::Cim::ObjectPath.new(path.namespace.to_s, path.class_name.to_s)
+      path.keys.each do |key, val|
+        op.add_key(key.to_s, val)
+      end
+      client.associator_names(op, association_class.to_s).to_a.map { |op| path.and_name(op.to_s) }
+    end
     
     # Implementation
     def initialize
