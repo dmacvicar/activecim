@@ -1,25 +1,44 @@
-$: << File.join(File.dirname(__FILE__), "test")
-require 'rubygems'
-gem 'hoe', '>= 2.1.0'
-require 'hoe'
+require "rake"
+require "rake/rdoctask"
+require "rake/testtask"
 
-#require 'rake/gempackagetask'
-#require 'rake/rdoctask'
-#require 'rake/testtask'
+$LOAD_PATH.unshift File.expand_path("../lib", __FILE__)
+require "active_cim"
 
-task :default => :test
-
-HOE = Hoe.spec 'active_cim' do
-  developer('Duncan Mac-Vicar P.', 'dmacvicar@suse.de')
-  developer('Klaus Kaempf', 'kkaempf@suse.de')
-  self.summary = "ActiveRecord like API for CIM access"
-  self.description = "ActiveCim is a rails-way of accessing CIM data in a CIMOM/client independent way. Currently it supports access using wbemcli and SBLIM client library"
-  self.readme_file = ['README', ENV['HLANG'], 'rdoc'].compact.join('.')
-  self.history_file = ['CHANGELOG', ENV['HLANG'], 'rdoc'].compact.join('.')
-  self.extra_rdoc_files = FileList['*.rdoc']
-  #self.clean_globs = [
-  #  'lib/sfcc/*.{o,so,bundle,a,log,dll}',
-  #  'lib/sfcc/sfcc.rb',
-  #]
+task :build do
+  system "gem build active_cim.gemspec"
 end
 
+task :install => :build do
+  system "sudo gem install active_cim-#{ActiveCim::VERSION}.gem"
+end
+
+Rake::TestTask.new do |t|
+  t.libs << "test"
+  t.test_files = FileList['test/test*.rb']
+  t.verbose = true
+end
+
+extra_docs = ['README*', 'CHANGELOG*']
+
+begin
+ require 'yard'
+  YARD::Rake::YardocTask.new(:doc) do |t|
+    t.files   = ['lib/**/*.rb', *extra_docs]
+  end
+rescue LoadError
+  STDERR.puts "Install yard if you want prettier docs"
+  Rake::RDocTask.new(:doc) do |rdoc|
+    if File.exist?("VERSION.yml")
+      config = File.read("VERSION")
+      version = "#{config[:major]}.#{config[:minor]}.#{config[:patch]}"
+    else
+      version = ""
+    end
+    rdoc.rdoc_dir = "doc"
+    rdoc.title = "active_cim #{version}"
+    extra_docs.each { |ex| rdoc.rdoc_files.include ex }
+  end
+end
+
+task :default => ["test"]
