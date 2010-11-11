@@ -237,6 +237,20 @@ module ActiveCim
         end
       end
 
+      # ActiveRecord-inspired helpers
+      def all(*arguments)
+        find(:all, *arguments)
+      end
+      def first(*arguments)
+        find(:first, *arguments)
+      end
+      def last(*arguments)
+        find(:last, *arguments)
+      end
+      def one(*arguments)
+        find(:one, *arguments)
+      end
+
       private
       # Find every resource
       def find_every(options)
@@ -252,6 +266,11 @@ module ActiveCim
           coll << instance
         end
         coll
+      end
+
+      # Find a single instance with a free-form scope
+      def find_single(scope, options)
+        raise "Not implemented"
       end
  
       # Find a single instance
