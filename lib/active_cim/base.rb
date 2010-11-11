@@ -116,13 +116,8 @@ module ActiveCim
       # sets the URI of the CIM server we are connecting to
       def site=(site)
         @connector = nil
-        if site.nil?
-          @site = nil
-        else
-          @site = create_site_uri_from(site)
-          @user = URI.decode(@site.user) if @site.user
-          @password = URI.decode(@site.password) if @site.password
-        end
+        d = site_decode(site)
+        @site, @user, @password = d[:site], d[:user], d[:password]
       end
 
       # the URI of the CIM server we are connecting to
@@ -246,9 +241,11 @@ module ActiveCim
       # Find every resource
       def find_every(options)
         coll = []
-        klass_path = ActiveCim::Cim::ObjectPath.parse("#{site}:#{cim_class_name}")
-        connector.instance_names(klass_path).each do |object_path|
-          properties = connector.instance_properties(object_path)
+        s = site_decode(options[:site])[:site] || site()
+        c = connector_decode(options[:connector]) || connector()
+        klass_path = ActiveCim::Cim::ObjectPath.parse("#{s}:#{cim_class_name}")
+        c.instance_names(klass_path).each do |object_path|
+          properties = c.instance_properties(object_path)
           # get the properties
           properties = rubyize_fields(properties)
           instance = instantiate_instance(object_path, properties)
@@ -260,6 +257,25 @@ module ActiveCim
       # Find a single instance
       def find_one(options)
         raise "Not implemented"
+      end
+
+      def connector_decode(connector)
+        if connector.is_a? Symbol
+          ActiveCim::ConnectorAdapter.create connector
+        elsif connector.respond_to? :instance_names
+          connector
+        else
+          nil
+        end
+      end
+
+      def site_decode(site)
+        ret = {:site=>nil, :user=>nil, :password=>nil}
+        return ret if site.nil?
+        ret[:site] = create_site_uri_from(site)
+        ret[:user] = URI.decode(ret[:site].user) if ret[:site].user
+        ret[:password] = URI.decode(ret[:site].password) if ret[:site].password
+        ret
       end
       
       # takes the properties and creates a record from it
