@@ -220,6 +220,7 @@ module ActiveCim
       # * <tt>:first</tt> - Returns the first instance found.
       # * <tt>:last</tt> - Returns the last instance found.
       # * <tt>:all</tt> - Returns every instance that matches the request.
+      # * regex - Returns any objects whose paths match
       #
       # ==== Examples
       # ports = Linux_EthernetPort.find(:all)
@@ -233,7 +234,7 @@ module ActiveCim
           when :first then find_every(options).first
           when :last then find_every(options).last
           when :one then find_one(options)
-          else find_single(scope, options)
+          else (find_any(options) { |item| item.to_s =~ scope }).first
         end
       end
 
@@ -251,28 +252,22 @@ module ActiveCim
         find(:one, *arguments)
       end
 
-      private
-      # Find every resource
       def find_every(options)
-        coll = []
+        find_any(options) {|i| true}
+      end
+      # Find every resource; if a block is provided, it can filter by
+      # returning false.
+      def find_any(options)
+        conn = connector_decode(options[:connector]) || connector()
         s = site_decode(options[:site])[:site] || site()
-        c = connector_decode(options[:connector]) || connector()
-        klass_path = ActiveCim::Cim::ObjectPath.parse("#{s}:#{cim_class_name}")
-        c.instance_names(klass_path).each do |object_path|
-          properties = c.instance_properties(object_path)
-          # get the properties
-          properties = rubyize_fields(properties)
-          instance = instantiate_instance(object_path, properties)
-          coll << instance
+        path = ActiveCim::Cim::ObjectPath.parse("#{s}:#{cim_class_name}")
+        names = conn.instance_names(path).select do |item|
+          !block_given? || yield(item)
         end
-        coll
+        names.collect {|item| instantiate_instance(conn, item)}
       end
 
-      # Find a single instance with a free-form scope
-      def find_single(scope, options)
-        raise "Not implemented"
-      end
- 
+      private
       # Find a single instance
       def find_one(options)
         raise "Not implemented"
@@ -297,13 +292,13 @@ module ActiveCim
         ret
       end
       
-      # takes the properties and creates a record from it
-      # note that those are the key properties
-      def instantiate_instance(object_path, properties)
-          new(object_path, properties).tap do |instance|
-          end
-        end
-    end
+      # takes the connector and object path and creates an instance using
+      # its properties; note that those are the key properties
+      def instantiate_instance(connector, object_path)
+        properties = connector.instance_properties(object_path)
+        new(object_path, rubyize_fields(properties))
+      end
+    end # class << self
 
     # constructor    
     def initialize(object_path, attributes = {})
